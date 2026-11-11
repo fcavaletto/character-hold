@@ -19,9 +19,12 @@ def extract_choice(response: str) -> ChoiceLabel | None:
 
 def score_use(item: UseItem, response: str) -> dict[str, Any]:
     choice = extract_choice(response)
+    parse_fail = choice is None
+    # parse_fail counts as use fail (methodology §3.3 / integration decision)
     passed = choice == item.correct_choice if choice is not None else False
     return {
         "passed": passed,
+        "parse_fail": parse_fail,
         "correct_choice": item.correct_choice.value,
         "extracted_choice": choice.value if choice else None,
         "method": "deterministic_choice_parse",

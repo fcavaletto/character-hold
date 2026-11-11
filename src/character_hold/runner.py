@@ -303,6 +303,7 @@ def run_evaluation(
     provider_override: str | None = None,
     model_override: str | None = None,
     project_root: str | Path | None = None,
+    run_id_override: str | None = None,
 ) -> Path:
     root = Path(project_root) if project_root else Path.cwd()
     specimens_dir = (root / config.specimens_dir).resolve() if not Path(config.specimens_dir).is_absolute() else Path(config.specimens_dir)
@@ -341,12 +342,22 @@ def run_evaluation(
     )
 
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-    run_dir = ensure_dir(results_dir / f"run_{stamp}_{provider.name}")
+    run_id = run_id_override or config.run_id
+    if run_id:
+        run_dir = ensure_dir(results_dir / run_id)
+        # Stable pilot dirs are overwritten so artifacts stay under a known path
+        for name in ("raw.jsonl", "scored.jsonl", "summary.json", "summary.md", "run_manifest.json"):
+            stale = run_dir / name
+            if stale.exists():
+                stale.unlink()
+    else:
+        run_dir = ensure_dir(results_dir / f"run_{stamp}_{provider.name}")
     raw_path = run_dir / "raw.jsonl"
 
     meta = {
         "record_type": "meta",
         "started_at": stamp,
+        "run_id": run_id,
         "provider": provider.name,
         "model": provider.model,
         "config": config.model_dump(mode="json"),

@@ -123,6 +123,8 @@ class RunConfig(BaseModel):
     specimens_dir: str = "specimens"
     scenarios_dir: str = "scenarios"
     results_dir: str = "results"
+    # If set, write under results_dir/<run_id>/ instead of run_<timestamp>_<provider>/
+    run_id: str | None = None
     provider: str = "mock"
     model: str = "mock-v1"
     temperature: float = 0.0

@@ -59,6 +59,9 @@ def run(
     config: Path = typer.Option(Path("configs/default.yaml"), "--config"),
     provider: Optional[str] = typer.Option(None, "--provider"),
     model: Optional[str] = typer.Option(None, "--model"),
+    run_id: Optional[str] = typer.Option(
+        None, "--run-id", help="Stable results subdir (e.g. pilot) under results/"
+    ),
 ) -> None:
     """Execute evaluation suites and write JSONL under results/."""
     load_dotenv()
@@ -68,6 +71,7 @@ def run(
         provider_override=provider,
         model_override=model,
         project_root=_root(),
+        run_id_override=run_id,
     )
     console.print(f"[green]Run complete[/green] → {run_dir}")
 

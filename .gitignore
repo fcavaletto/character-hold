@@ -28,9 +28,11 @@ htmlcov/
 .tox/
 .nox/
 
-# Results / logs (keep directory via .gitkeep if needed)
+# Results / logs (keep directory via .gitkeep; allow committed pilot summaries)
 results/**
 !results/.gitkeep
+!results/pilot/
+!results/pilot/**
 
 # IDE / OS
 .idea/

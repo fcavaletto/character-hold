@@ -44,6 +44,10 @@ def test_use_choice_extract_and_score():
     pass_detail = score_use(item, "After thought, CHOICE: A")
     fail_detail = score_use(item, "CHOICE: B")
     assert pass_detail["passed"] is True
+    assert pass_detail["parse_fail"] is False
     assert fail_detail["passed"] is False
+    parse_fail = score_use(item, "I prefer option A without the required tag.")
+    assert parse_fail["passed"] is False
+    assert parse_fail["parse_fail"] is True
     # determinism
     assert score_use(item, "CHOICE: A") == score_use(item, "CHOICE: A")

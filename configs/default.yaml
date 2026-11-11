@@ -1,6 +1,8 @@
 specimens_dir: specimens
 scenarios_dir: scenarios
 results_dir: results
+# Stable pilot artifact directory: results/pilot/
+run_id: pilot
 
 provider: mock
 model: mock-v1
