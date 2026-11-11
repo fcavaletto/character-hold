@@ -1,0 +1,26 @@
+specimens_dir: specimens
+scenarios_dir: scenarios
+results_dir: results
+
+provider: mock
+model: mock-v1
+temperature: 0.0
+max_tokens: 512
+seed: 42
+
+# If empty/null, load all specimens found under specimens_dir
+specimen_ids: null
+
+# Suite filters: null/empty = all item types present in scenarios
+suites:
+  - say
+  - use
+  - pressure
+
+run_faithfulness: true
+fracture_on:
+  - out
+  - reverses
+
+# Optional secondary LLM judge for pressure (deterministic scoring remains primary)
+use_llm_judge: false
