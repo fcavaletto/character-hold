@@ -1,0 +1,7 @@
+{
+  "raw": "/home/federico/development/remote-test-project/results/pilot/raw.jsonl",
+  "scored": "/home/federico/development/remote-test-project/results/pilot/scored.jsonl",
+  "provider": "mock",
+  "model": "mock-v1",
+  "n_results": 144
+}
