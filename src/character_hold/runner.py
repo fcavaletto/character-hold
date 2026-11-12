@@ -10,7 +10,7 @@ from typing import Any
 import yaml
 from pydantic import TypeAdapter
 
-from character_hold.analyze import summarize, to_markdown, write_report
+from character_hold.analyze import write_report
 from character_hold.faithfulness import run_faithfulness_check
 from character_hold.fracture import detect_break
 from character_hold.providers import get_provider
@@ -108,12 +108,38 @@ def validate_paths(config: RunConfig) -> dict[str, Any]:
         errors.append(f"No scenarios found under {config.scenarios_dir}")
     orphan = [i.id for i in scenarios if i.specimen_id not in specimens]
     if orphan:
-        errors.append(f"Scenario items reference missing specimens: {orphan}")
+        errors.append(f"Scenario items reference missing specimens: {orphan[:20]}")
+
+    # Cross-check: unique ids, use prompts require CHOICE cue, pressure turns present
+    seen_ids: set[str] = set()
+    by_type: dict[str, int] = {"say": 0, "use": 0, "pressure": 0}
+    by_specimen: dict[str, dict[str, int]] = {}
+    for item in scenarios:
+        if item.id in seen_ids:
+            errors.append(f"Duplicate scenario id: {item.id}")
+        seen_ids.add(item.id)
+        by_type[item.type] = by_type.get(item.type, 0) + 1
+        cell = by_specimen.setdefault(item.specimen_id, {"say": 0, "use": 0, "pressure": 0})
+        cell[item.type] = cell.get(item.type, 0) + 1
+        if isinstance(item, UseItem):
+            blob = f"{item.prompt}\n{item.choice_a_summary}\n{item.choice_b_summary}".upper()
+            if "CHOICE" not in blob and "OPTION A" not in blob:
+                errors.append(f"Use item missing CHOICE/option cue: {item.id}")
+        if isinstance(item, PressureItem):
+            if not item.adversary_turns:
+                errors.append(f"Pressure item has no adversary turns: {item.id}")
+            if item.max_turns < 1:
+                errors.append(f"Pressure item max_turns < 1: {item.id}")
+        if isinstance(item, SayItem) and not item.pass_patterns:
+            errors.append(f"Say item missing pass_patterns: {item.id}")
+
     return {
         "ok": not errors,
         "errors": errors,
         "n_specimens": len(specimens),
         "n_scenarios": len(scenarios),
+        "by_type": by_type,
+        "by_specimen": by_specimen,
         "specimen_ids": sorted(specimens.keys()),
         "item_ids": [i.id for i in scenarios],
     }
@@ -346,10 +372,23 @@ def run_evaluation(
     if run_id:
         run_dir = ensure_dir(results_dir / run_id)
         # Stable pilot dirs are overwritten so artifacts stay under a known path
-        for name in ("raw.jsonl", "scored.jsonl", "summary.json", "summary.md", "run_manifest.json"):
+        for name in (
+            "raw.jsonl",
+            "scored.jsonl",
+            "summary.json",
+            "summary.md",
+            "report.md",
+            "report.html",
+            "INDEX.md",
+            "run_manifest.json",
+        ):
             stale = run_dir / name
             if stale.exists():
                 stale.unlink()
+        figures_dir = run_dir / "figures"
+        if figures_dir.is_dir():
+            for png in figures_dir.glob("*.png"):
+                png.unlink()
     else:
         run_dir = ensure_dir(results_dir / f"run_{stamp}_{provider.name}")
     raw_path = run_dir / "raw.jsonl"
@@ -394,9 +433,7 @@ def run_evaluation(
 
     scored_path = run_dir / "scored.jsonl"
     write_jsonl(scored_path, [r.model_dump(mode="json") for r in results])
-    summary = summarize([r.model_dump(mode="json") for r in results])
-    write_json(run_dir / "summary.json", summary)
-    (run_dir / "summary.md").write_text(to_markdown(summary), encoding="utf-8")
+    write_report(run_dir, out_dir=run_dir)
     write_json(
         run_dir / "run_manifest.json",
         {
@@ -405,6 +442,9 @@ def run_evaluation(
             "provider": provider.name,
             "model": provider.model,
             "n_results": len(results),
+            "seed": config.seed,
+            "temperature": config.temperature,
+            "mock": provider.name == "mock",
         },
     )
     return run_dir

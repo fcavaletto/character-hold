@@ -12,7 +12,14 @@ from rich.console import Console
 from character_hold.analyze import write_report
 from character_hold.runner import load_config, rescore_run, run_evaluation, validate_paths
 
-app = typer.Typer(add_completion=False, no_args_is_help=True, help="character-hold evaluation CLI")
+app = typer.Typer(
+    add_completion=False,
+    no_args_is_help=True,
+    help=(
+        "character-hold: evaluate whether declared assistant character "
+        "survives saying → using → holding under pressure."
+    ),
+)
 console = Console()
 
 
@@ -27,7 +34,6 @@ def validate(
     """Validate specimens + scenarios against schema and cross-references."""
     load_dotenv()
     cfg = load_config(config)
-    # Prefer project dirs; fall back to fixtures for dry validation
     report = validate_paths(cfg)
     if not report["ok"]:
         fixtures = _root() / "tests" / "fixtures"
@@ -45,8 +51,12 @@ def validate(
                 "[yellow]Project specimens/scenarios missing; fixtures validate OK.[/yellow]"
             )
     if report["ok"]:
+        by_type = report.get("by_type") or {}
+        type_bits = " ".join(f"{k}={v}" for k, v in sorted(by_type.items()))
         console.print(
-            f"[green]OK[/green] specimens={report['n_specimens']} scenarios={report['n_scenarios']}"
+            f"[green]OK[/green] specimens={report['n_specimens']} "
+            f"scenarios={report['n_scenarios']}"
+            + (f" ({type_bits})" if type_bits else "")
         )
         raise typer.Exit(0)
     for err in report["errors"]:
@@ -56,9 +66,11 @@ def validate(
 
 @app.command("run")
 def run(
-    config: Path = typer.Option(Path("configs/default.yaml"), "--config"),
-    provider: Optional[str] = typer.Option(None, "--provider"),
-    model: Optional[str] = typer.Option(None, "--model"),
+    config: Path = typer.Option(Path("configs/default.yaml"), "--config", help="Config YAML"),
+    provider: Optional[str] = typer.Option(
+        None, "--provider", help="Provider override: mock | openai | anthropic | openrouter"
+    ),
+    model: Optional[str] = typer.Option(None, "--model", help="Model id override"),
     run_id: Optional[str] = typer.Option(
         None, "--run-id", help="Stable results subdir (e.g. pilot) under results/"
     ),
@@ -79,7 +91,9 @@ def run(
 @app.command("score")
 def score(
     input: Path = typer.Option(..., "--input", help="Run directory or raw.jsonl"),
-    scenarios_dir: Optional[Path] = typer.Option(None, "--scenarios-dir"),
+    scenarios_dir: Optional[Path] = typer.Option(
+        None, "--scenarios-dir", help="Scenario YAML dir for offline say/use rescoring"
+    ),
 ) -> None:
     """Re-score raw logs offline (deterministic)."""
     load_dotenv()
@@ -90,11 +104,19 @@ def score(
 @app.command("report")
 def report(
     input: Path = typer.Option(..., "--input", help="Run directory or scored.jsonl"),
+    no_figures: bool = typer.Option(False, "--no-figures", help="Skip matplotlib figures"),
+    no_html: bool = typer.Option(False, "--no-html", help="Skip report.html"),
 ) -> None:
-    """Write summary JSON + markdown tables."""
+    """Write summary JSON/MD, report.md, figures, and optional report.html."""
     load_dotenv()
-    paths = write_report(input)
-    console.print(f"[green]Report[/green] → {paths['summary_md']}")
+    paths = write_report(input, write_figures=not no_figures, write_html=not no_html)
+    console.print(f"[green]Report[/green] summary → {paths['summary_md']}")
+    console.print(f"         report.md → {paths['report_md']}")
+    if paths.get("report_html"):
+        console.print(f"         report.html → {paths['report_html']}")
+    if paths.get("figures"):
+        console.print(f"         figures → {Path(list(paths['figures'].values())[0]).parent}")
+    console.print(f"         INDEX → {paths['index_md']}")
 
 
 if __name__ == "__main__":
