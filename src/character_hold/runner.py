@@ -367,7 +367,11 @@ def run_evaluation(
         seed=config.seed,
     )
 
-    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    # Mock runs use a fixed stamp so `make demo` keeps committed artifacts clean.
+    if str(provider_name).lower() == "mock":
+        stamp = f"MOCKSEED{int(config.seed) if config.seed is not None else 0:04d}T000000Z"
+    else:
+        stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     run_id = run_id_override or config.run_id
     if run_id:
         run_dir = ensure_dir(results_dir / run_id)

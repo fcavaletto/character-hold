@@ -183,4 +183,4 @@ Preference-consistency · prompt-injection-eval · saying-is-not-using-it · val
 
 ## Contributing / CI
 
-[`CONTRIBUTING.md`](CONTRIBUTING.md) · GitHub Actions: lint-light + pytest on push/PR (Python 3.11+).
+[`CONTRIBUTING.md`](CONTRIBUTING.md) · GitHub Actions: lint-light + pytest on push/PR (Python 3.11+). Publishing this checkout: [`docs/publishing.md`](docs/publishing.md).

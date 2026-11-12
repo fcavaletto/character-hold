@@ -186,6 +186,15 @@ def _fmt_rate(v: float | None) -> str:
     return f"{v:.3f}"
 
 
+def _fmt_break(v: Any) -> str:
+    if v is None:
+        return "—"
+    try:
+        return f"{float(v):.1f}"
+    except (TypeError, ValueError):
+        return str(v)
+
+
 def _faithfulness_footnote() -> str:
     bits = "; ".join(f"`{k}` = {v}" for k, v in FAITHFULNESS_LABELS.items())
     return (
@@ -210,8 +219,16 @@ def to_markdown(summary: dict[str, Any], *, figure_rels: dict[str, str] | None =
         f"| hold_rate | {_fmt_rate(summary.get('hold_rate'))} |",
         f"| say_use_gap | {_fmt_rate(summary.get('say_use_gap'))} |",
         f"| use_parse_fail_rate | {_fmt_rate(summary.get('use_parse_fail_rate'))} |",
-        f"| median_break_turn | {summary.get('median_break_turn') if summary.get('median_break_turn') is not None else '—'} |",
-        f"| n_fractures | {summary.get('n_fractures', 0)} |",
+        f"| median_break_turn | {_fmt_break(summary.get('median_break_turn'))} |",
+        (
+            f"| n_fractures | {summary.get('n_fractures', 0)}"
+            + (
+                f" / {summary.get('n_pressure')}"
+                if summary.get("n_pressure")
+                else ""
+            )
+            + " |"
+        ),
         "",
         "## By suite",
         "",
@@ -241,7 +258,7 @@ def to_markdown(summary: dict[str, Any], *, figure_rels: dict[str, str] | None =
             f"{_fmt_rate(cell.get('say_rate'))} | {_fmt_rate(cell.get('use_rate'))} | "
             f"{_fmt_rate(cell.get('hold_rate'))} | {_fmt_rate(cell.get('say_use_gap'))} | "
             f"{_fmt_rate(cell.get('use_parse_fail_rate'))} | "
-            f"{cell.get('median_break_turn') if cell.get('median_break_turn') is not None else '—'} | "
+            f"{_fmt_break(cell.get('median_break_turn'))} | "
             f"{cell.get('n_items', 0)} |"
         )
 
@@ -301,8 +318,11 @@ def to_markdown(summary: dict[str, Any], *, figure_rels: dict[str, str] | None =
     else:
         lines.append("| Verdict | Count |")
         lines.append("|---------|------:|")
-        for k, v in sorted(faith.items()):
-            lines.append(f"| {k} | {v} |")
+        faith_keys = [k for k in FAITHFULNESS_LABELS if k in faith] + sorted(
+            k for k in faith if k not in FAITHFULNESS_LABELS
+        )
+        for k in faith_keys:
+            lines.append(f"| {k} | {faith[k]} |")
         lines.append("")
         lines.append(_faithfulness_footnote())
     lines.append("")
@@ -324,19 +344,23 @@ def to_html(
     def rate_cell(v: float | None) -> str:
         return esc(_fmt_rate(v))
 
+    n_pressure = summary.get("n_pressure")
+    n_fractures = summary.get("n_fractures", 0)
+    fractures_display = (
+        f"{n_fractures} / {n_pressure}" if n_pressure else str(n_fractures if n_fractures is not None else "—")
+    )
     rows_agg = [
-        ("say_rate", summary.get("say_rate")),
-        ("use_rate", summary.get("use_rate")),
-        ("hold_rate", summary.get("hold_rate")),
-        ("say_use_gap", summary.get("say_use_gap")),
-        ("use_parse_fail_rate", summary.get("use_parse_fail_rate")),
-        ("median_break_turn", summary.get("median_break_turn")),
-        ("n_fractures", summary.get("n_fractures")),
-        ("n_items", summary.get("n_items")),
+        ("say_rate", rate_cell(summary.get("say_rate"))),
+        ("use_rate", rate_cell(summary.get("use_rate"))),
+        ("hold_rate", rate_cell(summary.get("hold_rate"))),
+        ("say_use_gap", rate_cell(summary.get("say_use_gap"))),
+        ("use_parse_fail_rate", rate_cell(summary.get("use_parse_fail_rate"))),
+        ("median_break_turn", esc(_fmt_break(summary.get("median_break_turn")))),
+        ("n_fractures", esc(fractures_display)),
+        ("n_items", esc(summary.get("n_items"))),
     ]
     agg_html = "".join(
-        f"<tr><td>{esc(k)}</td><td class='num'>{rate_cell(v) if isinstance(v, float) else esc(v)}</td></tr>"
-        for k, v in rows_agg
+        f"<tr><td>{esc(k)}</td><td class='num'>{v}</td></tr>" for k, v in rows_agg
     )
 
     cell_rows = ""
@@ -349,16 +373,22 @@ def to_html(
             f"<td class='num'>{rate_cell(cell.get('use_rate'))}</td>"
             f"<td class='num'>{rate_cell(cell.get('hold_rate'))}</td>"
             f"<td class='num'>{rate_cell(cell.get('say_use_gap'))}</td>"
-            f"<td class='num'>{esc(cell.get('median_break_turn') if cell.get('median_break_turn') is not None else '—')}</td>"
+            f"<td class='num'>{esc(_fmt_break(cell.get('median_break_turn')))}</td>"
             f"<td class='num'>{esc(cell.get('n_items'))}</td>"
             "</tr>"
         )
 
-    def count_table(data: dict[str, Any]) -> str:
+    def count_table(data: dict[str, Any], *, preferred_order: tuple[str, ...] | None = None) -> str:
         if not data:
             return "<p class='muted'>none</p>"
+        if preferred_order:
+            keys = [k for k in preferred_order if k in data] + sorted(
+                k for k in data if k not in preferred_order
+            )
+        else:
+            keys = sorted(data.keys())
         body = "".join(
-            f"<tr><td>{esc(k)}</td><td class='num'>{esc(v)}</td></tr>" for k, v in sorted(data.items())
+            f"<tr><td>{esc(k)}</td><td class='num'>{esc(data[k])}</td></tr>" for k in keys
         )
         return f"<table><thead><tr><th>Label</th><th>Count</th></tr></thead><tbody>{body}</tbody></table>"
 
@@ -384,106 +414,149 @@ def to_html(
         + "."
     )
 
+    faith_order = tuple(FAITHFULNESS_LABELS.keys())
+    fracture_order = ("both", "out", "reverses", "partial", "hedges", "unknown")
+    fracture_table = count_table(
+        summary.get("fracture_type_counts") or {}, preferred_order=fracture_order
+    )
+    faith_table = count_table(
+        summary.get("faithfulness") or {}, preferred_order=faith_order
+    )
+
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>{esc(title)}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,600&display=swap" rel="stylesheet"/>
 <style>
   :root {{
-    --bg: #f7f4ef;
-    --ink: #1c1a17;
-    --muted: #5c574f;
-    --card: #fffdf9;
-    --line: #ddd6c8;
+    --bg: #eef2f0;
+    --ink: #15201a;
+    --muted: #4a564f;
+    --surface: #ffffff;
+    --line: #d5ddd8;
     --accent: #1b6b4a;
-    --warn: #8b3a3a;
-    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
-    --sans: "IBM Plex Sans", "Source Sans 3", "Segoe UI", sans-serif;
+    --banner-bg: #e4efe8;
+    --banner-ink: #134a34;
+    --serif: "Source Serif 4", "Palatino Linotype", Palatino, Georgia, serif;
+    --sans: "IBM Plex Sans", "Segoe UI", sans-serif;
     --mono: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
   }}
   * {{ box-sizing: border-box; }}
   body {{
     margin: 0;
     background:
-      radial-gradient(1200px 500px at 10% -10%, #e7efe8 0%, transparent 55%),
-      radial-gradient(900px 400px at 100% 0%, #efe6d8 0%, transparent 50%),
+      radial-gradient(1100px 480px at 8% -8%, #d9ebe2 0%, transparent 55%),
+      radial-gradient(900px 420px at 100% 0%, #dce4ea 0%, transparent 50%),
       var(--bg);
     color: var(--ink);
     font-family: var(--sans);
-    line-height: 1.5;
+    line-height: 1.55;
   }}
   header {{
-    padding: 2.25rem 1.5rem 1.25rem;
+    padding: 2.4rem 1.5rem 1.1rem;
     max-width: 960px;
     margin: 0 auto;
   }}
   .banner {{
     display: inline-block;
-    background: #f3e4dc;
-    color: var(--warn);
-    border: 1px solid #e2c4b4;
-    padding: 0.35rem 0.7rem;
-    font-size: 0.78rem;
-    letter-spacing: 0.04em;
+    background: var(--banner-bg);
+    color: var(--banner-ink);
+    border: 1px solid #b7cfc2;
+    padding: 0.4rem 0.75rem;
+    font-size: 0.76rem;
+    letter-spacing: 0.045em;
     text-transform: uppercase;
     font-family: var(--mono);
-    margin-bottom: 1rem;
+    font-weight: 500;
+    margin-bottom: 1.05rem;
   }}
   h1 {{
     font-family: var(--serif);
     font-weight: 600;
-    font-size: clamp(1.8rem, 3vw, 2.4rem);
-    margin: 0 0 0.4rem;
+    font-size: clamp(1.85rem, 3.2vw, 2.45rem);
+    margin: 0 0 0.45rem;
     letter-spacing: -0.02em;
+    line-height: 1.15;
   }}
   .lede {{
     color: var(--muted);
-    max-width: 42rem;
+    max-width: 40rem;
     margin: 0;
+    font-size: 1.02rem;
   }}
   main {{
     max-width: 960px;
     margin: 0 auto;
-    padding: 0 1.5rem 3rem;
+    padding: 0 1.5rem 2.75rem;
   }}
   section {{
-    background: var(--card);
+    background: var(--surface);
     border: 1px solid var(--line);
-    border-radius: 10px;
-    padding: 1.25rem 1.35rem;
-    margin: 1rem 0;
+    border-radius: 8px;
+    padding: 1.35rem 1.4rem 1.25rem;
+    margin: 1.05rem 0;
   }}
   h2 {{
     font-family: var(--serif);
-    font-size: 1.25rem;
-    margin: 0 0 0.85rem;
+    font-size: 1.22rem;
+    margin: 0 0 0.9rem;
+    letter-spacing: -0.01em;
   }}
   table {{
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.92rem;
+    font-size: 0.93rem;
   }}
   th, td {{
     border-bottom: 1px solid var(--line);
-    padding: 0.45rem 0.4rem;
+    padding: 0.55rem 0.45rem;
     text-align: left;
+    vertical-align: top;
   }}
-  th {{ color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.03em; }}
-  td.num {{ text-align: right; font-variant-numeric: tabular-nums; font-family: var(--mono); }}
-  figure {{ margin: 1rem 0 1.4rem; }}
-  figure img {{ width: 100%; height: auto; border: 1px solid var(--line); border-radius: 6px; background: #faf8f5; }}
-  figcaption {{ color: var(--muted); font-size: 0.85rem; margin-top: 0.4rem; }}
-  .muted {{ color: var(--muted); font-size: 0.9rem; }}
+  tr:last-child td {{ border-bottom: none; }}
+  th {{
+    color: var(--muted);
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }}
+  td.num {{
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    font-family: var(--mono);
+    font-size: 0.88rem;
+  }}
+  figure {{ margin: 0.85rem 0 1.35rem; }}
+  figure:last-child {{ margin-bottom: 0.25rem; }}
+  figure img {{
+    width: 100%;
+    height: auto;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: #f7faf8;
+    display: block;
+  }}
+  figcaption {{ color: var(--muted); font-size: 0.86rem; margin-top: 0.45rem; }}
+  .muted {{ color: var(--muted); font-size: 0.9rem; margin: 0.85rem 0 0; }}
   footer {{
     max-width: 960px;
     margin: 0 auto;
     padding: 0 1.5rem 2.5rem;
     color: var(--muted);
-    font-size: 0.85rem;
+    font-size: 0.86rem;
   }}
-  a {{ color: var(--accent); }}
+  a {{ color: var(--accent); text-underline-offset: 2px; }}
+  code {{ font-family: var(--mono); font-size: 0.9em; }}
+  @media (max-width: 640px) {{
+    th, td {{ padding: 0.45rem 0.3rem; font-size: 0.86rem; }}
+    section {{ padding: 1.1rem 1rem; }}
+  }}
 </style>
 </head>
 <body>
@@ -512,16 +585,19 @@ def to_html(
     {figs}
     <section>
       <h2>Fracture types</h2>
-      {count_table(summary.get("fracture_type_counts") or {})}
+      {fracture_table}
     </section>
     <section>
       <h2>Faithfulness</h2>
-      {count_table(summary.get("faithfulness") or {})}
+      {faith_table}
       <p class="muted">{faith_note}</p>
     </section>
   </main>
   <footer>
-    Generated by <code>character-hold report</code>. See <code>docs/methodology.md</code> and <code>docs/pilot_protocol.md</code>.
+    Generated by <code>character-hold report</code>.
+    Protocol: <a href="../../docs/methodology.md">methodology</a>
+    · <a href="../../docs/pilot_protocol.md">pilot card</a>
+    · <a href="INDEX.md">results index</a>.
   </footer>
 </body>
 </html>
@@ -548,7 +624,7 @@ def write_index_md(
         f"| use_rate | {_fmt_rate(summary.get('use_rate'))} |",
         f"| hold_rate | {_fmt_rate(summary.get('hold_rate'))} |",
         f"| say_use_gap | {_fmt_rate(summary.get('say_use_gap'))} |",
-        f"| median_break_turn | {summary.get('median_break_turn') if summary.get('median_break_turn') is not None else '—'} |",
+        f"| median_break_turn | {_fmt_break(summary.get('median_break_turn'))} |",
         f"| n_items | {summary.get('n_items', 0)} |",
         "",
         "## Artifacts",

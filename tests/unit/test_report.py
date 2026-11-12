@@ -43,6 +43,10 @@ def test_write_report_emits_md_html_figures(tmp_path: Path):
     html = paths["report_html"].read_text(encoding="utf-8")
     assert "MOCK" in html
     assert "figures/" in html
+    assert "IBM Plex Sans" in html
+    assert "fonts.googleapis.com" in html
+    assert "median_break_turn" in html
+    assert "2.000" not in html  # break turns must not use rate .3f formatting
     assert "faithful" in FAITHFULNESS_LABELS
 
 
