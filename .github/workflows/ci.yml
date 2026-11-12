@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install
+        run: |
+          python -m pip install -U pip
+          pip install -e ".[dev]"
+      - name: Lint-light
+        run: |
+          python -m compileall -q src
+          python -c "import yaml, pathlib; paths=list(pathlib.Path('specimens').glob('*.yaml'))+list(pathlib.Path('scenarios').rglob('*.yaml'))+list(pathlib.Path('configs').glob('*.yaml'));
+[yaml.safe_load(p.read_text()) for p in paths]; print(f'yaml_ok n={len(paths)}')"
+      - name: Pytest
+        run: pytest -q
+      - name: CLI smoke (validate + report on fixtures path)
+        run: |
+          character-hold validate --config configs/default.yaml
+          character-hold run --config configs/default.yaml --provider mock --run-id ci-smoke
+          test -f results/ci-smoke/report.html
+          test -f results/ci-smoke/report.md
+          test -d results/ci-smoke/figures
