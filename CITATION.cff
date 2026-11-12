@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+title: "character-hold"
+message: "If you use this software, please cite it as below."
+type: software
+authors:
+  - family-names: Cavaletto
+    given-names: Federico
+license: MIT
+version: 0.1.0
+abstract: >-
+  Evaluation harness for whether declared assistant character principles
+  survive saying, using, and holding under multi-turn pressure.
+keywords:
+  - AI safety
+  - evaluation
+  - character
+  - alignment
+  - saying-is-not-using-it
