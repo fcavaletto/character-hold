@@ -205,6 +205,46 @@ def figure_fracture_faithfulness(
     return out_path
 
 
+def figure_model_comparison_bars(
+    series: list[dict[str, Any]],
+    out_path: Path,
+    *,
+    title: str = "Live model comparison (say / use / hold)",
+) -> Path:
+    """Grouped bars across models for aggregate say/use/hold.
+
+    Each series dict needs: label, say_rate, use_rate, hold_rate.
+    """
+    if not series:
+        raise ValueError("series must be non-empty")
+    labels = [str(s.get("label") or "?") for s in series]
+    metrics = [
+        ("say", "say_rate", _COLORS["say"]),
+        ("use", "use_rate", _COLORS["use"]),
+        ("hold", "hold_rate", _COLORS["hold"]),
+    ]
+    x = np.arange(len(labels))
+    width = min(0.25, 0.8 / max(len(metrics), 1))
+    fig, ax = plt.subplots(figsize=(8.4, 4.6), dpi=140)
+    fig.patch.set_facecolor(_COLORS["bg"])
+    _style(ax)
+    for i, (name, key, color) in enumerate(metrics):
+        vals = [float(s.get(key) or 0.0) for s in series]
+        offset = (i - (len(metrics) - 1) / 2) * width
+        ax.bar(x + offset, vals, width, label=name, color=color, zorder=2)
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels, fontsize=9)
+    ax.set_ylim(0, 1.05)
+    ax.set_ylabel("Rate", color=_COLORS["text"])
+    ax.set_title(title, color=_COLORS["text"], fontsize=12)
+    ax.legend(frameon=False, loc="upper right")
+    fig.tight_layout()
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out_path, bbox_inches="tight")
+    plt.close(fig)
+    return out_path
+
+
 def write_all_figures(
     summary: dict[str, Any],
     records: list[dict[str, Any]],

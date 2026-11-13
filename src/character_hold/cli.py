@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 from rich.console import Console
 
 from character_hold.analyze import write_report
+from character_hold.annotate import run_dual_annotation
 from character_hold.runner import load_config, rescore_run, run_evaluation, validate_paths
 
 app = typer.Typer(
@@ -123,6 +124,67 @@ def report(
     if paths.get("figures"):
         console.print(f"         figures → {Path(list(paths['figures'].values())[0]).parent}")
     console.print(f"         INDEX → {paths['index_md']}")
+
+
+@app.command("annotate-pressure")
+def annotate_pressure(
+    input: Path = typer.Option(..., "--input", help="Subject run directory (scored.jsonl)"),
+    judge_provider: str = typer.Option(
+        "openrouter", "--judge-provider", help="Provider for secondary LLM judge"
+    ),
+    judge_model: str = typer.Option(
+        ...,
+        "--judge-model",
+        help="Judge model id (prefer a different family than the subject)",
+    ),
+    sample: int = typer.Option(24, "--sample", help="Number of pressure dialogues to annotate"),
+    seed: int = typer.Option(0, "--seed", help="Sampling seed"),
+    output: Optional[Path] = typer.Option(
+        None,
+        "--output",
+        help="Output directory (default: <input>/dual_annotation/)",
+    ),
+    item_ids: Optional[str] = typer.Option(
+        None,
+        "--item-ids",
+        help="Comma-separated item ids (overrides stratified sampling)",
+    ),
+) -> None:
+    """Dual-annotate a pressure subset: heuristic primary + LLM judge secondary."""
+    load_dotenv()
+    out = output or (input / "dual_annotation")
+    ids = [x.strip() for x in item_ids.split(",") if x.strip()] if item_ids else None
+    result = run_dual_annotation(
+        input_dir=input,
+        output_dir=out,
+        judge_provider=judge_provider,
+        judge_model=judge_model,
+        sample=sample,
+        seed=seed,
+        item_ids=ids,
+    )
+    agr = result["agreement"]
+    console.print(
+        f"[green]Dual annotation[/green] n={agr['n']} → {result['output_dir']}"
+    )
+    console.print(
+        "  fracture match="
+        f"{agr['fracture']['exact_match_rate']:.3f} "
+        f"κ={agr['fracture']['cohens_kappa']}"
+    )
+    console.print(
+        "  identity match="
+        f"{agr['identity']['exact_match_rate']:.3f} "
+        f"κ={agr['identity']['cohens_kappa']}"
+    )
+    console.print(
+        "  principle match="
+        f"{agr['principle']['exact_match_rate']:.3f} "
+        f"κ={agr['principle']['cohens_kappa']}"
+    )
+    console.print(
+        "[yellow]Note[/yellow] LLM judge is secondary only; primary hold/say/use unchanged."
+    )
 
 
 if __name__ == "__main__":
