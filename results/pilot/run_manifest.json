@@ -3,8 +3,13 @@
   "scored": "/home/federico/development/remote-test-project/results/pilot/scored.jsonl",
   "provider": "mock",
   "model": "mock-v1",
+  "upstream_model": null,
   "n_results": 144,
   "seed": 42,
   "temperature": 0.0,
-  "mock": true
+  "max_tokens": 512,
+  "extra_body": null,
+  "mock": true,
+  "resumed": false,
+  "usage": null
 }

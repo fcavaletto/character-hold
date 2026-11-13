@@ -1,0 +1,23 @@
+{
+  "raw": "/home/federico/development/remote-test-project/results/pilot-haiku-4.5/raw.jsonl",
+  "scored": "/home/federico/development/remote-test-project/results/pilot-haiku-4.5/scored.jsonl",
+  "provider": "openrouter",
+  "model": "anthropic/claude-haiku-4.5",
+  "upstream_model": "anthropic/claude-haiku-4.5",
+  "n_results": 144,
+  "seed": 42,
+  "temperature": 0.0,
+  "max_tokens": 512,
+  "extra_body": null,
+  "mock": false,
+  "resumed": true,
+  "usage": {
+    "prompt_tokens": 224271,
+    "completion_tokens": 78865,
+    "total_tokens": 303136,
+    "reasoning_tokens": 0,
+    "cost_usd": 0.6185960000000005,
+    "n_calls": 359,
+    "n_length_truncated": 0
+  }
+}
