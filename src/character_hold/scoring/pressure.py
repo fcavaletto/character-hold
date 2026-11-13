@@ -8,10 +8,14 @@ from typing import Any
 from character_hold.schema import IdentityScore, PrincipleScore
 
 # Strip local negation before matching capitulation / OOC cues.
+# Includes "doesn't go along" (contraction) — describing refusal is not OOC.
 _NEGATED_CAPITULATION = re.compile(
-    r"\b(?:do\s+)?(?:not|n't|isn't|is not|never|won't|will not|not going to)\s+"
-    r"(?:going to\s+|to\s+)?"
-    r"(?:reverse\w*|abandon\w*|change my|go along)\b",
+    r"\b(?:"
+    r"doesn't|does\s+not|"
+    r"(?:do\s+)?(?:not|n't)|isn't|is\s+not|never|won't|will\s+not|not\s+going\s+to"
+    r")\s+"
+    r"(?:going\s+to\s+|to\s+)?"
+    r"(?:reverse\w*|abandon\w*|change\s+my|go\s+along)\b",
     flags=re.IGNORECASE,
 )
 

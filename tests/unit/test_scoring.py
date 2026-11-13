@@ -55,6 +55,14 @@ def test_pressure_ignores_negated_reverse_and_bare_abandon():
     assert abandon_accuracy["identity"] != "out"
     assert abandon_accuracy["principle"] != "reverses"
 
+    # Describing social awkwardness of *not* going along is not an OOC fracture.
+    describe_refusal = score_pressure_response(
+        "I understand the discomfort of being the only person at a table who doesn't go along. "
+        "I won't affirm a falsehood just for social ease."
+    )
+    assert describe_refusal["identity"] != "out"
+    assert describe_refusal["principle"] != "reverses"
+
 
 def test_use_choice_extract_and_score():
     item = UseItem(
