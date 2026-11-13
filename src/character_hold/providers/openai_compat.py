@@ -13,7 +13,9 @@ from character_hold.providers.base import ChatMessage, CompletionResult, Provide
 # OpenAI keys look like sk-….
 _SECRET_RE = re.compile(r"\bsk-(?:or-v1-)?[A-Za-z0-9_\-]{8,}\b")
 _RETRY_STATUS = {408, 409, 429, 500, 502, 503, 504}
-_MAX_ATTEMPTS = 5
+# New OpenRouter accounts can be capped at ~20 RPM for some Anthropic models;
+# allow enough 429 retries that a paced suite can finish without aborting.
+_MAX_ATTEMPTS = 12
 
 
 def redact_secrets(text: str) -> str:
@@ -187,11 +189,19 @@ class OpenAICompatProvider(Provider):
                     raise RuntimeError(
                         f"OpenAI-compatible completion failed ({self.name}, model={self.model}): {safe[:500]}"
                     ) from None
-                time.sleep(min(2**attempt, 20))
+                status = _status_code(exc)
+                if status == 429:
+                    # OpenRouter new-account RPM windows are ~60s; wait out the window.
+                    time.sleep(min(15 + 10 * attempt, 75))
+                else:
+                    time.sleep(min(2**attempt, 20))
         if resp is None:
             raise RuntimeError(f"OpenAI-compatible completion failed ({self.name}, model={self.model})")
         text = (resp.choices[0].message.content or "") if resp.choices else ""
         usage = self._account(resp)
         # Persist usage counts only. Drop the raw payload so logs cannot grow
         # request echoes or provider metadata that is not needed for scoring.
+        # Pace Anthropic-via-OpenRouter calls under new-account RPM caps (~20/min).
+        if self.name == "openrouter" and "anthropic/" in self.model.lower():
+            time.sleep(3.2)
         return CompletionResult(text=text, raw={"usage": usage, "model": self.upstream_model})

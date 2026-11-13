@@ -31,10 +31,19 @@ htmlcov/
 # Results / logs (keep directory via .gitkeep; allow committed pilot summaries)
 results/**
 !results/.gitkeep
+!results/COMPARISON.md
 !results/pilot/
 !results/pilot/**
 !results/pilot-deepseek-flash/
 !results/pilot-deepseek-flash/**
+!results/pilot-haiku-4.5/
+!results/pilot-haiku-4.5/**
+# Keep live-run tee logs local-only
+results/**/*-run.log
+!results/pilot-deepseek-flash/dual_annotation/
+!results/pilot-deepseek-flash/dual_annotation/**
+!results/pilot-haiku-4.5/dual_annotation/
+!results/pilot-haiku-4.5/dual_annotation/**
 
 # IDE / OS
 .idea/
