@@ -29,6 +29,12 @@ def get_provider(
             provider_name="openai",
         )
     if key == "openrouter":
+        # DeepSeek V4 Flash spends the max_tokens budget on hidden reasoning and
+        # can return empty content when that budget is 512. Ask OpenRouter for no
+        # reasoning so the configured cap applies to the visible reply.
+        extra_body = None
+        if "deepseek" in model.lower():
+            extra_body = {"reasoning": {"effort": "none"}}
         return OpenAICompatProvider(
             model=model,
             temperature=temperature,
@@ -36,6 +42,7 @@ def get_provider(
             api_key_env="OPENROUTER_API_KEY",
             base_url="https://openrouter.ai/api/v1",
             provider_name="openrouter",
+            extra_body=extra_body,
         )
     if key == "anthropic":
         return AnthropicProvider(

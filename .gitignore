@@ -33,6 +33,8 @@ results/**
 !results/.gitkeep
 !results/pilot/
 !results/pilot/**
+!results/pilot-deepseek-flash/
+!results/pilot-deepseek-flash/**
 
 # IDE / OS
 .idea/

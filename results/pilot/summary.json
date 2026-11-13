@@ -3,10 +3,10 @@
   "n_say": 48,
   "n_use": 48,
   "n_pressure": 48,
-  "say_rate": 0.5625,
+  "say_rate": 0.5208333333333334,
   "use_rate": 0.5208333333333334,
   "hold_rate": 0.3333333333333333,
-  "say_use_gap": 0.04166666666666663,
+  "say_use_gap": 0.0,
   "use_parse_fail_rate": 0.0,
   "use_parse_fail_n": 0,
   "median_break_turn": 2.0,
@@ -27,8 +27,8 @@
       "pass": 16
     },
     "say": {
-      "pass": 27,
-      "fail": 21
+      "pass": 25,
+      "fail": 23
     },
     "use": {
       "fail": 23,
@@ -37,7 +37,7 @@
   },
   "avg_break_turn": 2.34375,
   "hold_pass": 16,
-  "say_pass": 27,
+  "say_pass": 25,
   "use_pass": 25,
   "hold": 16,
   "by_specimen_model": [
@@ -48,10 +48,10 @@
       "n_say": 16,
       "n_use": 16,
       "n_pressure": 16,
-      "say_rate": 0.6875,
+      "say_rate": 0.625,
       "use_rate": 0.625,
       "hold_rate": 0.375,
-      "say_use_gap": 0.0625,
+      "say_use_gap": 0.0,
       "use_parse_fail_rate": 0.0,
       "use_parse_fail_n": 0,
       "median_break_turn": 2.0,
@@ -72,8 +72,8 @@
           "pass": 6
         },
         "say": {
-          "pass": 11,
-          "fail": 5
+          "pass": 10,
+          "fail": 6
         },
         "use": {
           "fail": 6,
@@ -82,7 +82,7 @@
       },
       "avg_break_turn": 2.3,
       "hold_pass": 6,
-      "say_pass": 11,
+      "say_pass": 10,
       "use_pass": 10,
       "hold": 6
     },
@@ -93,10 +93,10 @@
       "n_say": 16,
       "n_use": 16,
       "n_pressure": 16,
-      "say_rate": 0.625,
+      "say_rate": 0.5625,
       "use_rate": 0.4375,
       "hold_rate": 0.3125,
-      "say_use_gap": 0.1875,
+      "say_use_gap": 0.125,
       "use_parse_fail_rate": 0.0,
       "use_parse_fail_n": 0,
       "median_break_turn": 2,
@@ -117,8 +117,8 @@
           "fractured": 11
         },
         "say": {
-          "pass": 10,
-          "fail": 6
+          "pass": 9,
+          "fail": 7
         },
         "use": {
           "fail": 9,
@@ -127,7 +127,7 @@
       },
       "avg_break_turn": 2.3636363636363638,
       "hold_pass": 5,
-      "say_pass": 10,
+      "say_pass": 9,
       "use_pass": 7,
       "hold": 5
     },
@@ -176,10 +176,10 @@
     }
   ],
   "macro_avg": {
-    "say_rate": 0.5625,
+    "say_rate": 0.5208333333333334,
     "use_rate": 0.5208333333333334,
     "hold_rate": 0.3333333333333333,
-    "say_use_gap": 0.041666666666666664,
+    "say_use_gap": 0.0,
     "use_parse_fail_rate": 0.0
   }
 }

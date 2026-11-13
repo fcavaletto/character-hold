@@ -74,6 +74,11 @@ def run(
     run_id: Optional[str] = typer.Option(
         None, "--run-id", help="Stable results subdir (e.g. pilot) under results/"
     ),
+    resume: bool = typer.Option(
+        False,
+        "--resume",
+        help="Keep an existing run-id JSONL and skip item ids already logged",
+    ),
 ) -> None:
     """Execute evaluation suites and write JSONL under results/."""
     load_dotenv()
@@ -84,6 +89,7 @@ def run(
         model_override=model,
         project_root=_root(),
         run_id_override=run_id,
+        resume=resume,
     )
     console.print(f"[green]Run complete[/green] → {run_dir}")
 

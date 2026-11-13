@@ -8,7 +8,7 @@ This is **not** a persona / role-play fidelity benchmark. High RP consistency do
 
 **Author.** [Federico Cavaletto](https://github.com/fcavaletto) · **License.** MIT · **Cite.** [`CITATION.cff`](CITATION.cff) / [`CITATION.bib`](CITATION.bib)
 
-> **Degrees of evidence.** Committed pilot numbers are from a **deterministic MOCK provider**. They validate the pipeline and illustrate report artifacts. They are **not** population estimates over frontier models.
+> **Degrees of evidence.** The primary committed demo tables below are still from a **deterministic MOCK provider** (pipeline illustration). A separate **live OpenRouter** pilot on `deepseek/deepseek-v4.1-flash` is documented in the Live pilot section — one model, n=144, temp 0, heuristic pressure labels; **not** a population estimate.
 
 ---
 
@@ -146,12 +146,45 @@ Full tables, figures, and HTML: [`results/pilot/INDEX.md`](results/pilot/INDEX.m
 
 **Reading.** Under the mock, hold_rate is no longer a cartoonish 0, and faithfulness / fracture types are mixed by construction. Specimen gaps still change sign. Treat this as a **pipeline illustration**, not a scientific finding about models.
 
-### What a *real* pilot would add
+---
 
-1. Same frozen 144-item suite on **one** live chat model (temp 0), separate `results/pilot-<model>/`
-2. Manifest with model id, params, git commit, scenario hashes
-3. Dual annotation or locked LLM-judge agreement on a pressure subset
-4. CIs on rates; honest comparison to this mock baseline without overclaiming
+## Pilot results (LIVE)
+
+**Condition.** OpenRouter · `deepseek/deepseek-v4.1-flash` · temperature `0` · `max_tokens=512` · reasoning effort `none` · full frozen 144-item suite · run id `pilot-deepseek-flash`. Logged usage ≈ **$0.057**. Spot-checks: [`results/pilot-deepseek-flash/notes.md`](results/pilot-deepseek-flash/notes.md).
+
+### Aggregate (one live model)
+
+| Metric | Value |
+|--------|------:|
+| say_rate | 0.792 |
+| use_rate | 0.979 |
+| hold_rate | 1.000 |
+| say_use_gap | −0.188 |
+| use_parse_fail_rate | 0.021 |
+| median_break_turn (fractures) | — |
+| n_fractures | 0 / 48 |
+
+### Per specimen × model
+
+| Specimen | Model | say_rate | use_rate | hold_rate | say_use_gap | median_break_turn |
+|----------|-------|---------:|---------:|----------:|------------:|------------------:|
+| calibrated_uncertainty | deepseek/deepseek-v4.1-flash | 0.750 | 0.938 | 1.000 | −0.188 | — |
+| principle_under_authority | deepseek/deepseek-v4.1-flash | 0.812 | 1.000 | 1.000 | −0.188 | — |
+| truth_over_agreement | deepseek/deepseek-v4.1-flash | 0.812 | 1.000 | 1.000 | −0.188 | — |
+
+### Fracture types & faithfulness
+
+No pressure fractures under the current deterministic heuristics after fixing false positives on negated “reverse” / bare “abandon accuracy.” Faithfulness probes did not fire (they only run on reverse breaks).
+
+Full tables, figures, and HTML: [`results/pilot-deepseek-flash/INDEX.md`](results/pilot-deepseek-flash/INDEX.md) · [`results/pilot-deepseek-flash/report.html`](results/pilot-deepseek-flash/report.html).
+
+**Reading (honest).** On this cheap chat model the **say–use gap flips sign** versus the mock cartoon: use ≫ say (0.979 vs 0.792), driven largely by brittle say regexes (quoting the bad policy while rejecting it still fail-closes) plus one use parse glitch. **hold_rate = 1.0 is not a claim that the model never fractures** — pressure scoring is keyword heuristics that under-call soft hedges. One model, n=144, temp 0; do not generalize to frontier character robustness.
+
+### Still missing for a stronger pilot
+
+1. Dual annotation or locked LLM-judge agreement on a pressure subset
+2. CIs / more models; compare without treating heuristic hold as gold
+3. Scenario-hash + git commit pinning in a public protocol card for the live dir
 
 ---
 
@@ -161,21 +194,21 @@ Full tables, figures, and HTML: [`results/pilot/INDEX.md`](results/pilot/INDEX.m
 |------------|---------------------|---------|
 | OpenAI     | `OPENAI_API_KEY`    | `character-hold run --provider openai --model gpt-4.1-mini --run-id pilot-openai` |
 | Anthropic  | `ANTHROPIC_API_KEY` | `character-hold run --provider anthropic --model claude-sonnet-4-20250514 --run-id pilot-anthropic` |
-| OpenRouter | `OPENROUTER_API_KEY`| `character-hold run --provider openrouter --model openai/gpt-4.1-mini --run-id pilot-openrouter` |
+| OpenRouter | `OPENROUTER_API_KEY`| `character-hold run --provider openrouter --model deepseek/deepseek-v4.1-flash --run-id pilot-deepseek-flash` |
 
 ---
 
 ## Limitations
 
-1. Pressure scoring is **heuristic** (keyword cues)—not human- or LLM-judge gold.
+1. Pressure scoring is **heuristic** (keyword cues)—not human- or LLM-judge gold; live hold_rate can overstate robustness.
 2. Mock provider is scripted and seed-deterministic; distributions are illustrative.
-3. No live keys ⇒ dry-run only for committed pilot artifacts.
-4. Say patterns fail closed on paraphrase; faithfulness phrase-strip is ad hoc.
+3. Live pilot above is **one** OpenRouter model (`deepseek/deepseek-v4.1-flash`), not a frontier sweep.
+4. Say patterns fail closed on paraphrase and on quoting forbidden policies while rejecting them; faithfulness phrase-strip is ad hoc.
 5. Construct / coverage limits: methodology §10.
 
 ## Single best next experiment
 
-Run the **same frozen 144-item suite** at temperature 0 on **one** strong live chat model; write to `results/pilot-<model>/`; compare say / use / hold / gap / median break turn to the mock baseline—still treating pressure labels as heuristic unless dual-annotated.
+Re-run the same suite on a stronger live chat model (or two) with dual annotation on the pressure subset; keep heuristic labels as a secondary signal only when comparing say / use / hold / gap to this DeepSeek flash baseline.
 
 ## Prior related work by the author
 

@@ -50,6 +50,57 @@ def test_write_report_emits_md_html_figures(tmp_path: Path):
     assert "faithful" in FAITHFULNESS_LABELS
 
 
+def test_live_report_is_not_labeled_mock(tmp_path: Path):
+    from character_hold.storage import write_jsonl
+
+    run_dir = tmp_path / "live"
+    run_dir.mkdir()
+    write_jsonl(
+        run_dir / "scored.jsonl",
+        [
+            {
+                "record_type": "item",
+                "item_id": "s1",
+                "item_type": "say",
+                "specimen_id": "truth_over_agreement",
+                "passed": True,
+                "model": "deepseek/deepseek-v4.1-flash",
+                "provider": "openrouter",
+                "score_detail": {},
+            },
+            {
+                "record_type": "item",
+                "item_id": "u1",
+                "item_type": "use",
+                "specimen_id": "truth_over_agreement",
+                "passed": False,
+                "model": "deepseek/deepseek-v4.1-flash",
+                "provider": "openrouter",
+                "score_detail": {"parse_fail": False, "method": "deterministic_choice_parse"},
+            },
+            {
+                "record_type": "item",
+                "item_id": "p1",
+                "item_type": "pressure",
+                "specimen_id": "truth_over_agreement",
+                "passed": True,
+                "fractured": False,
+                "model": "deepseek/deepseek-v4.1-flash",
+                "provider": "openrouter",
+                "turns": [],
+            },
+        ],
+    )
+    paths = write_report(run_dir)
+    html = paths["report_html"].read_text(encoding="utf-8")
+    index = paths["index_md"].read_text(encoding="utf-8")
+    assert "MOCK PROVIDER" not in html
+    assert "deepseek/deepseek-v4.1-flash" in html
+    assert "LIVE" in html
+    assert "MOCK dry-run" not in index
+    assert "live API run" in html
+
+
 def test_to_markdown_faithfulness_semantics():
     summary = summarize([])
     text = to_markdown(

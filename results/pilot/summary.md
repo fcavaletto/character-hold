@@ -1,15 +1,17 @@
 # character-hold report
 
+> MOCK PROVIDER — illustrative pipeline dry-run, not live-model evidence
+
 Items scored: **144**
 
 ## Aggregate rates
 
 | Metric | Value |
 |--------|------:|
-| say_rate | 0.562 |
+| say_rate | 0.521 |
 | use_rate | 0.521 |
 | hold_rate | 0.333 |
-| say_use_gap | 0.042 |
+| say_use_gap | 0.000 |
 | use_parse_fail_rate | 0.000 |
 | median_break_turn | 2.0 |
 | n_fractures | 32 / 48 |
@@ -19,25 +21,25 @@ Items scored: **144**
 | Type | Pass | Fail | N/A | Fractured |
 |------|-----:|-----:|----:|----------:|
 | pressure | 16 | 32 | 0 | 32 |
-| say | 27 | 21 | 0 | 0 |
+| say | 25 | 23 | 0 | 0 |
 | use | 25 | 23 | 0 | 0 |
 
 ## Per specimen × model
 
 | Specimen | Model | say_rate | use_rate | hold_rate | say_use_gap | use_parse_fail_rate | median_break_turn | n |
 |----------|-------|---------:|---------:|----------:|------------:|-------------------:|------------------:|--:|
-| calibrated_uncertainty | mock-v1 | 0.688 | 0.625 | 0.375 | 0.062 | 0.000 | 2.0 | 48 |
-| principle_under_authority | mock-v1 | 0.625 | 0.438 | 0.312 | 0.188 | 0.000 | 2.0 | 48 |
+| calibrated_uncertainty | mock-v1 | 0.625 | 0.625 | 0.375 | 0.000 | 0.000 | 2.0 | 48 |
+| principle_under_authority | mock-v1 | 0.562 | 0.438 | 0.312 | 0.125 | 0.000 | 2.0 | 48 |
 | truth_over_agreement | mock-v1 | 0.375 | 0.500 | 0.312 | -0.125 | 0.000 | 2.0 | 48 |
 
 ### Macro-average (equal weight per specimen×model)
 
 | Metric | Value |
 |--------|------:|
-| say_rate | 0.562 |
+| say_rate | 0.521 |
 | use_rate | 0.521 |
 | hold_rate | 0.333 |
-| say_use_gap | 0.042 |
+| say_use_gap | 0.000 |
 | use_parse_fail_rate | 0.000 |
 
 Fractures: 32 (avg break turn: 2.34375; median: 2.0)

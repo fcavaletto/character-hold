@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -158,23 +159,53 @@ def score_item_record(record: dict[str, Any], item: ScenarioItem | None = None) 
         out["passed"] = detail["passed"]
         out["score_detail"] = detail
     elif itype == "pressure":
-        # Recompute from stored turns if present
+        # Recompute heuristics from stored assistant text when present, then break turn.
         turns_data = record.get("turns") or []
-        fracture_on = record.get("fracture_on") or ["out", "reverses"]
+        fracture_on = (
+            record.get("fracture_on")
+            or (record.get("score_detail") or {}).get("fracture_on")
+            or ["out", "reverses"]
+        )
         turns: list[TurnRecord] = []
         for t in turns_data:
             if isinstance(t, TurnRecord):
-                turns.append(t)
+                base = t
             else:
-                turns.append(TurnRecord.model_validate(t))
+                base = TurnRecord.model_validate(t)
+            detail = score_pressure_response(base.content or "")
+            turns.append(
+                TurnRecord(
+                    turn=base.turn,
+                    role=base.role,
+                    content=base.content,
+                    identity=IdentityScore(detail["identity"]),
+                    principle=PrincipleScore(detail["principle"]),
+                )
+            )
         fractured, break_turn = detect_break(turns, fracture_on)
+        out["turns"] = [t.model_dump() for t in turns]
         out["fractured"] = fractured
         out["break_turn"] = break_turn
         out["passed"] = not fractured
-        out.setdefault("score_detail", {})
-        out["score_detail"]["fractured"] = fractured
-        out["score_detail"]["break_turn"] = break_turn
-        out["score_detail"]["method"] = "deterministic_fracture"
+        last_detail = (
+            score_pressure_response(turns[-1].content or "") if turns else {}
+        )
+        out["score_detail"] = {
+            "fracture_on": [getattr(f, "value", f) for f in fracture_on],
+            "last_turn_detail": last_detail or None,
+            "method": "deterministic_fracture",
+            "fractured": fractured,
+            "break_turn": break_turn,
+        }
+        break_principle = None
+        if fractured and break_turn is not None:
+            for tr in turns:
+                if tr.turn == break_turn and tr.principle is not None:
+                    break_principle = tr.principle.value
+                    break
+        # Drop a stored faithfulness verdict when the rescored break is not a reverse.
+        if not fractured or break_principle != PrincipleScore.REVERSES.value:
+            out["faithfulness"] = None
     return out
 
 
@@ -323,6 +354,60 @@ def _run_pressure(
     )
 
 
+def _empty_usage() -> dict[str, float | int]:
+    return {
+        "prompt_tokens": 0,
+        "completion_tokens": 0,
+        "total_tokens": 0,
+        "reasoning_tokens": 0,
+        "cost_usd": 0.0,
+        "n_calls": 0,
+        "n_length_truncated": 0,
+    }
+
+
+def _usage_snapshot(provider: Provider) -> dict[str, float | int]:
+    totals = getattr(provider, "usage_totals", None)
+    base = _empty_usage()
+    if not isinstance(totals, dict):
+        return base
+    for key in base:
+        if key in totals and totals[key] is not None:
+            base[key] = totals[key]
+    return base
+
+
+def _usage_delta(
+    before: dict[str, float | int], after: dict[str, float | int]
+) -> dict[str, float | int]:
+    delta = _empty_usage()
+    for key in delta:
+        b = before.get(key) or 0
+        a = after.get(key) or 0
+        if key == "cost_usd":
+            delta[key] = float(a) - float(b)
+        else:
+            delta[key] = int(a) - int(b)
+    return delta
+
+
+def _sum_item_usage(records: list[dict[str, Any]]) -> dict[str, float | int]:
+    total = _empty_usage()
+    for rec in records:
+        usage = rec.get("usage") or {}
+        if not isinstance(usage, dict):
+            continue
+        for key in total:
+            val = usage.get(key)
+            if val is None:
+                continue
+            if key == "cost_usd":
+                total[key] = float(total[key]) + float(val)
+            else:
+                total[key] = int(total[key]) + int(val)
+    return total
+
+
 def run_evaluation(
     config: RunConfig,
     *,
@@ -330,6 +415,7 @@ def run_evaluation(
     model_override: str | None = None,
     project_root: str | Path | None = None,
     run_id_override: str | None = None,
+    resume: bool = False,
 ) -> Path:
     root = Path(project_root) if project_root else Path.cwd()
     specimens_dir = (root / config.specimens_dir).resolve() if not Path(config.specimens_dir).is_absolute() else Path(config.specimens_dir)
@@ -375,42 +461,82 @@ def run_evaluation(
     run_id = run_id_override or config.run_id
     if run_id:
         run_dir = ensure_dir(results_dir / run_id)
-        # Stable pilot dirs are overwritten so artifacts stay under a known path
-        for name in (
-            "raw.jsonl",
-            "scored.jsonl",
-            "summary.json",
-            "summary.md",
-            "report.md",
-            "report.html",
-            "INDEX.md",
-            "run_manifest.json",
-        ):
-            stale = run_dir / name
-            if stale.exists():
-                stale.unlink()
-        figures_dir = run_dir / "figures"
-        if figures_dir.is_dir():
-            for png in figures_dir.glob("*.png"):
-                png.unlink()
     else:
         run_dir = ensure_dir(results_dir / f"run_{stamp}_{provider.name}")
     raw_path = run_dir / "raw.jsonl"
 
-    meta = {
-        "record_type": "meta",
-        "started_at": stamp,
-        "run_id": run_id,
-        "provider": provider.name,
-        "model": provider.model,
-        "config": config.model_dump(mode="json"),
-        "n_specimens": len(specimens),
-        "n_items": len(scenarios),
-    }
-    append_jsonl(raw_path, meta)
+    done_ids: set[str] = set()
+    if resume and raw_path.exists():
+        prior = list(read_jsonl(raw_path))
+        metas = [r for r in prior if r.get("record_type") == "meta" and r.get("model")]
+        if metas:
+            prior_model = metas[0].get("model")
+            prior_provider = metas[0].get("provider")
+            if prior_model != provider.model or prior_provider != provider.name:
+                raise RuntimeError(
+                    f"Refusing to resume {raw_path}: existing run is "
+                    f"{prior_provider}/{prior_model}, requested {provider.name}/{provider.model}."
+                )
+        done_ids = {
+            str(r["item_id"])
+            for r in prior
+            if r.get("record_type") == "item" and r.get("item_id")
+        }
+        append_jsonl(
+            raw_path,
+            {
+                "record_type": "meta",
+                "resumed_at": stamp,
+                "run_id": run_id,
+                "provider": provider.name,
+                "model": provider.model,
+                "n_already_complete": len(done_ids),
+            },
+        )
+    else:
+        if run_id:
+            # Stable pilot dirs are overwritten so artifacts stay under a known path.
+            # Resume keeps raw.jsonl and skips completed item ids.
+            for name in (
+                "raw.jsonl",
+                "scored.jsonl",
+                "summary.json",
+                "summary.md",
+                "report.md",
+                "report.html",
+                "INDEX.md",
+                "run_manifest.json",
+                "usage.json",
+            ):
+                stale = run_dir / name
+                if stale.exists():
+                    stale.unlink()
+            figures_dir = run_dir / "figures"
+            if figures_dir.is_dir():
+                for png in figures_dir.glob("*.png"):
+                    png.unlink()
+        meta = {
+            "record_type": "meta",
+            "started_at": stamp,
+            "run_id": run_id,
+            "provider": provider.name,
+            "model": provider.model,
+            "config": config.model_dump(mode="json"),
+            "n_specimens": len(specimens),
+            "n_items": len(scenarios),
+            "extra_body": getattr(provider, "extra_body", None),
+        }
+        append_jsonl(raw_path, meta)
 
-    results: list[ItemResult] = []
-    for item in scenarios:
+    n_total = len(scenarios)
+    for index, item in enumerate(scenarios, start=1):
+        if item.id in done_ids:
+            print(
+                f"[character-hold] {index}/{n_total} skip {item.id}",
+                file=sys.stderr,
+                flush=True,
+            )
+            continue
         specimen = specimens.get(item.specimen_id)
         if specimen is None:
             append_jsonl(
@@ -422,6 +548,7 @@ def run_evaluation(
                 },
             )
             continue
+        before_usage = _usage_snapshot(provider)
         if isinstance(item, SayItem):
             result = _run_say(item, specimen, provider, config)
         elif isinstance(item, UseItem):
@@ -430,13 +557,34 @@ def run_evaluation(
             result = _run_pressure(item, specimen, provider, config)
         else:
             continue
-        results.append(result)
         rec = result.model_dump(mode="json")
         rec["record_type"] = "item"
+        delta = _usage_delta(before_usage, _usage_snapshot(provider))
+        if int(delta.get("n_calls") or 0) > 0:
+            rec["usage"] = delta
         append_jsonl(raw_path, rec)
+        print(
+            f"[character-hold] {index}/{n_total} {item.type} {item.id} passed={result.passed}",
+            file=sys.stderr,
+            flush=True,
+        )
 
+    raw_records = list(read_jsonl(raw_path))
+    scored_rows = [r for r in raw_records if r.get("record_type") == "item"]
+    # One row per item id (resume can only append; keep the latest copy).
+    latest: dict[str, dict[str, Any]] = {}
+    order: list[str] = []
+    for row in scored_rows:
+        iid = str(row.get("item_id"))
+        if iid not in latest:
+            order.append(iid)
+        latest[iid] = row
+    scored_rows = [latest[i] for i in order]
     scored_path = run_dir / "scored.jsonl"
-    write_jsonl(scored_path, [r.model_dump(mode="json") for r in results])
+    write_jsonl(scored_path, scored_rows)
+    usage = _sum_item_usage(scored_rows)
+    if int(usage.get("n_calls") or 0) > 0:
+        write_json(run_dir / "usage.json", usage)
     write_report(run_dir, out_dir=run_dir)
     write_json(
         run_dir / "run_manifest.json",
@@ -445,10 +593,15 @@ def run_evaluation(
             "scored": str(scored_path),
             "provider": provider.name,
             "model": provider.model,
-            "n_results": len(results),
+            "upstream_model": getattr(provider, "upstream_model", None),
+            "n_results": len(scored_rows),
             "seed": config.seed,
             "temperature": config.temperature,
+            "max_tokens": config.max_tokens,
+            "extra_body": getattr(provider, "extra_body", None),
             "mock": provider.name == "mock",
+            "resumed": bool(resume and done_ids),
+            "usage": usage if int(usage.get("n_calls") or 0) > 0 else None,
         },
     )
     return run_dir

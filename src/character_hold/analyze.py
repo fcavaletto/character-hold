@@ -36,6 +36,48 @@ def _iter_items(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return [r for r in records if r.get("record_type") not in {"meta", "error"}]
 
 
+def is_mock_run(records: list[dict[str, Any]]) -> bool:
+    """True when every scored row is the deterministic mock provider (or the set is empty)."""
+    items = _iter_items(records)
+    if not items:
+        return True
+    for row in items:
+        provider = str(row.get("provider") or "")
+        model = str(row.get("model") or "")
+        if provider and provider != "mock":
+            return False
+        if model and model not in {"mock", "mock-v1"}:
+            return False
+    return True
+
+
+def _run_label(records: list[dict[str, Any]]) -> tuple[bool, str, str, str]:
+    """Return (is_mock, series_label, banner, lede)."""
+    if is_mock_run(records):
+        return (
+            True,
+            "MOCK pilot",
+            "MOCK PROVIDER — illustrative pipeline dry-run, not live-model evidence",
+            "Behavioral dissociation of saying, using, and holding declared assistant character "
+            "under pressure. Numbers below are from a deterministic mock provider.",
+        )
+    items = _iter_items(records)
+    providers = sorted({str(r.get("provider")) for r in items if r.get("provider")})
+    models = sorted({str(r.get("model")) for r in items if r.get("model")})
+    provider_bit = ", ".join(providers) if providers else "live"
+    model_bit = ", ".join(models) if models else "unspecified model"
+    banner = (
+        f"LIVE {provider_bit} / {model_bit} — one sampled run, temperature as logged. "
+        "Heuristic pressure labels, not a population estimate."
+    )
+    lede = (
+        "Behavioral dissociation of saying, using, and holding declared assistant character "
+        "under pressure. Numbers below are from a live API run. The committed mock baseline "
+        "is a separate pipeline illustration."
+    )
+    return False, "live pilot", banner, lede
+
+
 def _rate(passed: int, n: int) -> float | None:
     if n <= 0:
         return None
@@ -204,13 +246,23 @@ def _faithfulness_footnote() -> str:
     )
 
 
-def to_markdown(summary: dict[str, Any], *, figure_rels: dict[str, str] | None = None) -> str:
+def to_markdown(
+    summary: dict[str, Any],
+    *,
+    figure_rels: dict[str, str] | None = None,
+    banner: str | None = None,
+) -> str:
     lines = [
         "# character-hold report",
         "",
-        f"Items scored: **{summary.get('n_items', 0)}**",
-        "",
-        "## Aggregate rates",
+    ]
+    if banner:
+        lines.extend([f"> {banner}", ""])
+    lines.extend(
+        [
+            f"Items scored: **{summary.get('n_items', 0)}**",
+            "",
+            "## Aggregate rates",
         "",
         "| Metric | Value |",
         "|--------|------:|",
@@ -232,9 +284,10 @@ def to_markdown(summary: dict[str, Any], *, figure_rels: dict[str, str] | None =
         "",
         "## By suite",
         "",
-        "| Type | Pass | Fail | N/A | Fractured |",
-        "|------|-----:|-----:|----:|----------:|",
-    ]
+            "| Type | Pass | Fail | N/A | Fractured |",
+            "|------|-----:|-----:|----:|----------:|",
+        ]
+    )
     for itype, counts in (summary.get("by_type") or {}).items():
         lines.append(
             f"| {itype} | {counts.get('pass', 0)} | {counts.get('fail', 0)} | "
@@ -335,6 +388,10 @@ def to_html(
     figure_rels: dict[str, str] | None = None,
     title: str = "character-hold pilot report",
     banner: str = "MOCK PROVIDER — illustrative pipeline dry-run, not live-model evidence",
+    lede: str = (
+        "Behavioral dissociation of saying, using, and holding declared assistant character "
+        "under pressure. Numbers below are from a deterministic mock provider."
+    ),
 ) -> str:
     """Self-contained static HTML (no JS framework) suitable for demos."""
 
@@ -563,7 +620,7 @@ def to_html(
   <header>
     <div class="banner">{esc(banner)}</div>
     <h1>{esc(title)}</h1>
-    <p class="lede">Behavioral dissociation of saying, using, and holding declared assistant character under pressure. Numbers below are from a deterministic mock provider.</p>
+    <p class="lede">{esc(lede)}</p>
   </header>
   <main>
     <section>
@@ -609,12 +666,13 @@ def write_index_md(
     *,
     base: Path,
     figure_rels: dict[str, str] | None = None,
+    banner: str = "MOCK dry-run. Deterministic mock provider; not live-model evidence.",
 ) -> Path:
     """One-page results landing for a run directory."""
     lines = [
         "# Pilot results index",
         "",
-        "> **MOCK dry-run.** Deterministic mock provider; not live-model evidence.",
+        f"> {banner}",
         "",
         "## Headline metrics",
         "",
@@ -659,30 +717,44 @@ def write_report(
     base = Path(out_dir) if out_dir else (Path(input_path) if Path(input_path).is_dir() else Path(input_path).parent)
     base.mkdir(parents=True, exist_ok=True)
 
+    mock, series_label, banner, lede = _run_label(records)
+
     figure_paths: dict[str, Path] = {}
     figure_rels: dict[str, str] = {}
     if write_figures:
         from character_hold.figures import write_all_figures
 
-        figure_paths = write_all_figures(summary, records, base / "figures")
+        figure_paths = write_all_figures(
+            summary, records, base / "figures", series_label=series_label
+        )
         figure_rels = {k: f"figures/{p.name}" for k, p in figure_paths.items()}
 
     json_path = write_json(base / "summary.json", summary)
     summary_md = base / "summary.md"
-    summary_md.write_text(to_markdown(summary), encoding="utf-8")
+    summary_md.write_text(to_markdown(summary, banner=banner), encoding="utf-8")
 
     report_md = base / "report.md"
-    report_md.write_text(to_markdown(summary, figure_rels=figure_rels), encoding="utf-8")
+    report_md.write_text(
+        to_markdown(summary, figure_rels=figure_rels, banner=banner),
+        encoding="utf-8",
+    )
 
     html_path: Path | None = None
     if write_html:
         html_path = base / "report.html"
         html_path.write_text(
-            to_html(summary, figure_rels=figure_rels),
+            to_html(summary, figure_rels=figure_rels, banner=banner, lede=lede),
             encoding="utf-8",
         )
 
-    index_path = write_index_md(summary, base=base, figure_rels=figure_rels)
+    index_banner = (
+        "MOCK dry-run. Deterministic mock provider; not live-model evidence."
+        if mock
+        else banner
+    )
+    index_path = write_index_md(
+        summary, base=base, figure_rels=figure_rels, banner=index_banner
+    )
 
     out: dict[str, Any] = {
         "summary_json": json_path,

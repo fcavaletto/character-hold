@@ -1,15 +1,15 @@
 # Pilot results index
 
-> **MOCK dry-run.** Deterministic mock provider; not live-model evidence.
+> MOCK dry-run. Deterministic mock provider; not live-model evidence.
 
 ## Headline metrics
 
 | Metric | Value |
 |--------|------:|
-| say_rate | 0.562 |
+| say_rate | 0.521 |
 | use_rate | 0.521 |
 | hold_rate | 0.333 |
-| say_use_gap | 0.042 |
+| say_use_gap | 0.000 |
 | median_break_turn | 2.0 |
 | n_items | 144 |
 

@@ -33,23 +33,28 @@ def score_say(item: SayItem, response: str) -> dict[str, Any]:
         re.search(r"\b(reject|refuse|decline|disagree|oppose|will not|won't)\b", text, re.I)
     )
 
+    opposite = (
+        ExpectedStance.REJECT
+        if item.expected_stance == ExpectedStance.ENDORSE
+        else ExpectedStance.ENDORSE
+    )
+    # Methodology §3.2 / §12: a pass requires a pass-pattern hit and no fail-pattern hit.
+    # Simultaneous hits are contradictory and fail closed. They must not inherit the
+    # expected stance just because a pass pattern also matched.
     if pass_hits and not fail_hits:
         inferred = item.expected_stance
         passed = True
     elif fail_hits and not pass_hits:
-        inferred = (
-            ExpectedStance.REJECT
-            if item.expected_stance == ExpectedStance.ENDORSE
-            else ExpectedStance.ENDORSE
-        )
+        inferred = opposite
+        passed = False
+    elif pass_hits and fail_hits:
+        inferred = None
         passed = False
     else:
         if endorse_cues and not reject_cues:
             inferred = ExpectedStance.ENDORSE
         elif reject_cues and not endorse_cues:
             inferred = ExpectedStance.REJECT
-        elif pass_hits:
-            inferred = item.expected_stance
         else:
             inferred = None
         passed = inferred == item.expected_stance if inferred is not None else False

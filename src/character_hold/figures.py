@@ -48,7 +48,9 @@ def _short_specimen(name: str) -> str:
     return mapping.get(name, name[:18])
 
 
-def figure_say_use_hold_bars(summary: dict[str, Any], out_path: Path) -> Path:
+def figure_say_use_hold_bars(
+    summary: dict[str, Any], out_path: Path, *, series_label: str = "MOCK pilot"
+) -> Path:
     """Grouped bars: say / use / hold rates per specimen."""
     cells = summary.get("by_specimen_model") or []
     if not cells:
@@ -78,7 +80,11 @@ def figure_say_use_hold_bars(summary: dict[str, Any], out_path: Path) -> Path:
     ax.set_xticklabels(labels, fontsize=9)
     ax.set_ylim(0, 1.05)
     ax.set_ylabel("Rate", color=_COLORS["text"])
-    ax.set_title("Say / use / hold rates by specimen (MOCK pilot)", color=_COLORS["text"], fontsize=12)
+    ax.set_title(
+        f"Say / use / hold rates by specimen ({series_label})",
+        color=_COLORS["text"],
+        fontsize=12,
+    )
     ax.legend(frameon=False, loc="upper right")
     fig.tight_layout()
     out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -87,7 +93,9 @@ def figure_say_use_hold_bars(summary: dict[str, Any], out_path: Path) -> Path:
     return out_path
 
 
-def figure_say_use_gap(summary: dict[str, Any], out_path: Path) -> Path:
+def figure_say_use_gap(
+    summary: dict[str, Any], out_path: Path, *, series_label: str = "MOCK pilot"
+) -> Path:
     """Horizontal bar chart of say−use gap per specimen."""
     cells = summary.get("by_specimen_model") or []
     if not cells:
@@ -106,7 +114,11 @@ def figure_say_use_gap(summary: dict[str, Any], out_path: Path) -> Path:
     ax.set_yticks(y)
     ax.set_yticklabels(labels, fontsize=9)
     ax.set_xlabel("say_rate − use_rate", color=_COLORS["text"])
-    ax.set_title("Say–use gap by specimen (MOCK pilot)", color=_COLORS["text"], fontsize=12)
+    ax.set_title(
+        f"Say–use gap by specimen ({series_label})",
+        color=_COLORS["text"],
+        fontsize=12,
+    )
     fig.tight_layout()
     out_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out_path, bbox_inches="tight")
@@ -114,7 +126,9 @@ def figure_say_use_gap(summary: dict[str, Any], out_path: Path) -> Path:
     return out_path
 
 
-def figure_break_turn_distribution(records: list[dict[str, Any]], out_path: Path) -> Path:
+def figure_break_turn_distribution(
+    records: list[dict[str, Any]], out_path: Path, *, series_label: str = "MOCK pilot"
+) -> Path:
     """Histogram of break turns among fractured pressure items."""
     turns: list[int] = []
     for r in records:
@@ -139,7 +153,11 @@ def figure_break_turn_distribution(records: list[dict[str, Any]], out_path: Path
         ax.text(0.5, 0.5, "No fractures", ha="center", va="center", transform=ax.transAxes)
     ax.set_xlabel("Break turn (1-based)", color=_COLORS["text"])
     ax.set_ylabel("Count", color=_COLORS["text"])
-    ax.set_title("Break-turn distribution (MOCK pilot)", color=_COLORS["text"], fontsize=12)
+    ax.set_title(
+        f"Break-turn distribution ({series_label})",
+        color=_COLORS["text"],
+        fontsize=12,
+    )
     fig.tight_layout()
     out_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out_path, bbox_inches="tight")
@@ -147,7 +165,9 @@ def figure_break_turn_distribution(records: list[dict[str, Any]], out_path: Path
     return out_path
 
 
-def figure_fracture_faithfulness(summary: dict[str, Any], out_path: Path) -> Path:
+def figure_fracture_faithfulness(
+    summary: dict[str, Any], out_path: Path, *, series_label: str = "MOCK pilot"
+) -> Path:
     """Side-by-side counts: fracture types and faithfulness verdicts."""
     ftc = dict(summary.get("fracture_type_counts") or {})
     faith = dict(summary.get("faithfulness") or {})
@@ -172,7 +192,12 @@ def figure_fracture_faithfulness(summary: dict[str, Any], out_path: Path) -> Pat
         ax.set_title(title, color=_COLORS["text"], fontsize=11)
         ax.tick_params(axis="x", rotation=20)
 
-    fig.suptitle("Fracture & faithfulness (MOCK pilot)", color=_COLORS["text"], fontsize=12, y=1.02)
+    fig.suptitle(
+        f"Fracture & faithfulness ({series_label})",
+        color=_COLORS["text"],
+        fontsize=12,
+        y=1.02,
+    )
     fig.tight_layout()
     out_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out_path, bbox_inches="tight")
@@ -184,14 +209,24 @@ def write_all_figures(
     summary: dict[str, Any],
     records: list[dict[str, Any]],
     figures_dir: str | Path,
+    *,
+    series_label: str = "MOCK pilot",
 ) -> dict[str, Path]:
     """Write the standard figure set; return map of name → path."""
     out = Path(figures_dir)
     out.mkdir(parents=True, exist_ok=True)
     paths = {
-        "say_use_hold": figure_say_use_hold_bars(summary, out / "say_use_hold_bars.png"),
-        "say_use_gap": figure_say_use_gap(summary, out / "say_use_gap.png"),
-        "break_turns": figure_break_turn_distribution(records, out / "break_turn_distribution.png"),
-        "fracture_faith": figure_fracture_faithfulness(summary, out / "fracture_faithfulness.png"),
+        "say_use_hold": figure_say_use_hold_bars(
+            summary, out / "say_use_hold_bars.png", series_label=series_label
+        ),
+        "say_use_gap": figure_say_use_gap(
+            summary, out / "say_use_gap.png", series_label=series_label
+        ),
+        "break_turns": figure_break_turn_distribution(
+            records, out / "break_turn_distribution.png", series_label=series_label
+        ),
+        "fracture_faith": figure_fracture_faithfulness(
+            summary, out / "fracture_faithfulness.png", series_label=series_label
+        ),
     }
     return paths
