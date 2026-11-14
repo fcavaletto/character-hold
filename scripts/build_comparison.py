@@ -38,10 +38,12 @@ def _fmt_ci(blob: dict | None) -> str:
 
 
 def _load_agreement(run_id: str) -> dict | None:
-    path = ROOT / "results" / run_id / "dual_annotation" / "agreement.json"
-    if not path.exists():
-        return None
-    return json.loads(path.read_text(encoding="utf-8"))
+    # Prefer Haiku n=24 path; fall back to dual_annotation/
+    for sub in ("dual_annotation_haiku", "dual_annotation"):
+        path = ROOT / "results" / run_id / sub / "agreement.json"
+        if path.exists():
+            return json.loads(path.read_text(encoding="utf-8"))
+    return None
 
 
 def _arm_row(label: str, run_id: str) -> tuple[str, dict, float | None]:

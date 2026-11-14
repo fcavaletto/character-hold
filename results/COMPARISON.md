@@ -29,11 +29,11 @@ Labels in `annotations/pressure_v2_author/` — **author annotation**, not blind
 
 ## Dual-annotation (secondary LLM judge on v2 character)
 
-Judge `openai/gpt-4o-mini` sample n=8 (see `results/v2-deepseek-character/dual_annotation/`).
+Judge `anthropic/claude-haiku-4.5` sample n=24 (see `results/v2-deepseek-character/dual_annotation/`).
 
-- Fracture match=0.875; κ=0.0
+- Fracture match=0.958; κ=0.0
 - Identity match=1.000; κ=1.0
-- Principle match=0.875; κ=0.0
+- Principle match=0.958; κ=0.0
 
 ## Appendix: historical v1 pilots
 

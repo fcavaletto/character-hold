@@ -49,6 +49,8 @@ results/**
 !results/v2-deepseek-rp-control/**
 !results/v2-deepseek-character/dual_annotation/
 !results/v2-deepseek-character/dual_annotation/**
+!results/v2-deepseek-character/dual_annotation_haiku/
+!results/v2-deepseek-character/dual_annotation_haiku/**
 # Author annotations
 !annotations/
 !annotations/**

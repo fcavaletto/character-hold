@@ -29,7 +29,7 @@ Declared assistant character is often treated as load-bearing. RP/persona benchm
 | No uncertainty | **Closed:** bootstrap 95% CIs (1000) |
 | Brittle say regex | **Closed:** ≤2 `\|` per pattern |
 | vs RP evals | **Partial:** small RP control contrast |
-| LLM-judge circularity | **Partial:** author gold-ish; judge secondary (n=8) |
+| LLM-judge circularity | **Partial:** author gold-ish; Haiku secondary judge n=24 |
 | Thin theory | Pre-reg dissociations + falsifiers |
 
 ## 3. Live metrics (DeepSeek `deepseek-v4.1-flash`, suite v2)
@@ -39,9 +39,11 @@ Temperature 0; reasoning effort none. Primary specimens = 144 items. CIs = perce
 | Arm | say | use | hold | soft_yield | cost |
 |-----|-----|-----|------|------------|------|
 | **character** | 0.792 [0.667, 0.896] | 1.000 [1.000, 1.000] | 0.979 [0.938, 1.000] | 0.188 | $0.061 |
-| **no_character** | 0.792 [0.667, 0.917] | 1.000 [1.000, 1.000] | 0.983 [≈1.0] | 0.283 | $0.049 |
-| **opposite** | 0.646 [0.500, 0.771] | **0.000 [0.000, 0.000]** | 0.941 [0.896, 1.000] | 0.451 | $0.063 |
-| **RP control** (n=12) | 0.750 | 1.000 | 0.500 | 0.500 | $0.003 |
+| **no_character** | 0.792 [0.667, 0.917] | 1.000 [1.000, 1.000] | 1.000 [1.000, 1.000] | 0.250 | $0.049 |
+| **opposite** | 0.646 [0.500, 0.771] | **0.000 [0.000, 0.000]** | 0.958 [0.896, 1.000] | 0.458 | $0.063 |
+| **RP control** (n=12) | 0.750 | 1.000 | 0.500 | 0.000* | $0.003 |
+
+\*RP soft_yield 0 with 2/4 hard fractures (full_yield counted separately).
 
 say–use gap (character): **−0.208** [−0.333, −0.104] (use exceeds say; ceiling on use).
 
@@ -49,8 +51,8 @@ say–use gap (character): **−0.208** [−0.333, −0.104] (use exceeds say; c
 
 | Contrast | Δsay | Δuse | Δhold | Δsoft_yield |
 |----------|------|------|-------|-------------|
-| character − no_character | ~0 | ~0 | ~0 | **≈ −0.10** (character slightly less soft yield) |
-| character − opposite | +0.15 | **+1.00** | +0.04 | −0.26 |
+| character − no_character | ~0 | ~0 | ~−0.02 | **≈ −0.06** (character slightly less soft yield) |
+| character − opposite | +0.15 | **+1.00** | +0.02 | −0.27 |
 
 **Interpretation (honest):**
 
@@ -75,11 +77,11 @@ Path: `annotations/pressure_v2_author/`
 | Heuristic ↔ author | compliance_level | 0.914 | 0.342 |
 | Heuristic ↔ author | principle | 0.914 | 0.342 |
 | Heuristic ↔ author | identity | 0.901 | 0.082* |
-| Judge ↔ author (overlap) | identity / principle | ~0.90 | ~0* |
+| Heuristic ↔ Haiku judge (n=24) | fracture / identity / principle | 0.958 / 1.000 / 0.958 | 0* / 1.0 / 0* |
 
-\*κ depressed by class imbalance (mostly `holds` / `in_character`).
+\*κ depressed by class imbalance (mostly `holds` / `in_character` / no fracture).
 
-**Scorer revision:** v2 heuristics initially over-called `partial_compliance` when models quoted soft-yield asks but refused. After author dual-coding, soft lexicon no longer overrides clear hold/refusal language. Documented in `scoring/pressure.py` comments + this note.
+**Scorer revision:** false `reverses` on “can't affirm / not going to agree” fixed via expanded negation; soft lexicon no longer overrides clear refusal. See `annotations/pressure_v2_author/NOTES.md` + regression tests.
 
 ## 5. What we claim vs do not claim
 
@@ -111,14 +113,15 @@ Path: `annotations/pressure_v2_author/`
 | DeepSeek no_character | 0.049 |
 | DeepSeek opposite | 0.063 |
 | RP control | 0.003 |
-| Judge sample (8 dialogues, gpt-4o-mini) | ≪0.05 |
-| **Total (approx.)** | **~$0.18–0.22** |
+| Haiku dual-annotation (n=24) | ~0.05–0.15 (OpenRouter) |
+| **Total (approx.)** | **~$0.25–0.35** |
 
-Haiku v2 character arm deferred to save budget after DeepSeek ablations landed.
+Full Haiku v2 character suite deferred to save budget after DeepSeek ablations landed.
 
 ## 8. Artifacts
 
 - Runs: `results/v2-deepseek-{character,no-character,opposite,rp-control}/`
+- Dual-annotation (Haiku): `results/v2-deepseek-character/dual_annotation_haiku/`
 - Annotations: `annotations/pressure_v2_author/`
 - Pre-reg: `docs/preregistration_v2.md`
 - Comparison: `results/COMPARISON.md`
