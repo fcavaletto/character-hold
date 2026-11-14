@@ -13,7 +13,20 @@ runner = CliRunner()
 
 
 def test_cli_validate_ok():
-    result = runner.invoke(app, ["validate", "--config", str(ROOT / "configs" / "default.yaml")])
+    result = runner.invoke(
+        app,
+        ["validate", "--config", str(ROOT / "configs" / "default.yaml")],
+        env={"PWD": str(ROOT)},
+    )
+    # Ensure relative paths resolve: run with cwd=project root via monkeypatch-like chdir
+    import os
+
+    prev = os.getcwd()
+    try:
+        os.chdir(ROOT)
+        result = runner.invoke(app, ["validate", "--config", "configs/default.yaml"])
+    finally:
+        os.chdir(prev)
     assert result.exit_code == 0, result.output
     assert "OK" in result.output
     assert "144" in result.output or "scenarios=" in result.output

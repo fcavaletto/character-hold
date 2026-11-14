@@ -8,7 +8,7 @@ This is **not** a persona / role-play fidelity benchmark. High RP consistency do
 
 **Author.** [Federico Cavaletto](https://github.com/fcavaletto) · **License.** MIT · **Cite.** [`CITATION.cff`](CITATION.cff) / [`CITATION.bib`](CITATION.bib)
 
-> **Degrees of evidence.** The primary committed demo tables below are still from a **deterministic MOCK provider** (pipeline illustration). Live OpenRouter pilots (`deepseek/deepseek-v4.1-flash`, `anthropic/claude-haiku-4.5`) are single-seed, n=144, temp 0, with **heuristic** pressure labels as primary and optional dual-annotation as secondary — **not** population estimates. One-pager: [`results/COMPARISON.md`](results/COMPARISON.md).
+> **Degrees of evidence.** Suite **v2** is the default measurement design (balanced use A/B, soft-yield taxonomy, ablations, bootstrap CIs, author codebook labels). Live DeepSeek flash v2 arms are single-seed, temp 0 — **not** population estimates. MOCK tables remain a pipeline illustration. One-pager: [`results/COMPARISON.md`](results/COMPARISON.md) · Research note: [`docs/research_note_v2.md`](docs/research_note_v2.md).
 
 ---
 
@@ -53,12 +53,14 @@ flowchart LR
 | **Use** | Does it act on that principle in a forced-choice conflict? |
 | **Hold** | Does the disposition survive escalating pressure? |
 
-- **Specimens** (`specimens/`): `truth_over_agreement`, `calibrated_uncertainty`, `principle_under_authority`
-- **Scenarios** (`scenarios/`): 16×3 types × 3 specimens = **144** items
-- **Scorers:** deterministic say/use; pressure = heuristic identity × principle (primary). Optional dual-annotation LLM judge is **secondary** only ([`docs/dual_annotation.md`](docs/dual_annotation.md)).
+- **Specimens** (`specimens/` v2.0.0): `truth_over_agreement`, `calibrated_uncertainty`, `principle_under_authority` (+ opt-in `rp_persona_control`)
+- **Scenarios** (`scenarios/` v2; v1 freeze in `scenarios_v1/`): 16×3×3 = **144** primary items; use ~50/50 A/B
+- **Ablations:** `--ablation character|no_character|opposite_character`
+- **Scorers:** deterministic say/use; pressure = heuristic identity × principle + **soft_yield** (primary). Author codebook + optional LLM judge are **secondary** ([`docs/annotation_codebook.md`](docs/annotation_codebook.md), [`docs/dual_annotation.md`](docs/dual_annotation.md)).
+- **Uncertainty:** bootstrap 95% CIs (1000 resamples) in `character-hold report`
 - **Faithfulness (harness v0):** `faithful` = replay holds; `unfaithful` = replay still reverses; `transparent` = admits pressure
 
-Protocol: [`docs/methodology.md`](docs/methodology.md) · Authoring: [`docs/scenario_authoring.md`](docs/scenario_authoring.md) · Ethics: [`docs/ethics.md`](docs/ethics.md) · Frozen card: [`docs/pilot_protocol.md`](docs/pilot_protocol.md)
+Protocol: [`docs/methodology.md`](docs/methodology.md) · Pre-reg v2: [`docs/preregistration_v2.md`](docs/preregistration_v2.md) · Research note: [`docs/research_note_v2.md`](docs/research_note_v2.md) · Ethics: [`docs/ethics.md`](docs/ethics.md)
 
 ---
 
@@ -148,11 +150,23 @@ Full tables, figures, and HTML: [`results/pilot/INDEX.md`](results/pilot/INDEX.m
 
 ---
 
-## Pilot results (LIVE)
+## Pilot results (LIVE — suite v2)
 
-**Condition.** OpenRouter · `deepseek/deepseek-v4.1-flash` (upstream id matched) · temperature `0` · `max_tokens=512` · reasoning effort `none` · full frozen 144-item suite · run id `pilot-deepseek-flash`. Provider-reported cost **$0.057** (359 calls, 283,902 tokens). Reasoning was turned off because the model's default reasoning spent the 512-token budget and often returned empty visible text; that first pass was discarded. Spot-checks: [`results/pilot-deepseek-flash/notes.md`](results/pilot-deepseek-flash/notes.md).
+**Condition.** OpenRouter · `deepseek/deepseek-v4.1-flash` · temperature `0` · reasoning effort `none` · suite **v2** (balanced use A/B, soft-yield pressure). Full write-up: [`docs/research_note_v2.md`](docs/research_note_v2.md) · [`results/COMPARISON.md`](results/COMPARISON.md).
 
-### Aggregate (one live model)
+### Aggregate + ablations (95% bootstrap CIs)
+
+| Arm | say | use | hold | soft_yield | cost |
+|-----|-----|-----|------|------------|-----:|
+| [character](results/v2-deepseek-character/) | 0.792 [0.667, 0.896] | 1.000 | 0.979 [0.938, 1.000] | 0.188 | $0.061 |
+| [no_character](results/v2-deepseek-no-character/) | 0.792 [0.667, 0.917] | 1.000 | 0.983 | 0.283 | $0.049 |
+| [opposite](results/v2-deepseek-opposite/) | 0.646 [0.500, 0.771] | **0.000** | 0.941 | 0.451 | $0.063 |
+
+**Reading (honest).** Character ≈ no_character on say/use/hold (near-null causal test for the default prompt). Opposite drives **use → 0**, so system text can control forced choice when it fights base priors. Soft yield orders opposite > no_character > character. Hard hold ≈ 1.0 remains a weak differentiator on this model—do not overclaim. Author↔heuristic compliance match 0.914 (κ≈0.34): [`annotations/pressure_v2_author/`](annotations/pressure_v2_author/).
+
+### Historical v1 live appendix
+
+v1 DeepSeek/Haiku pilots (`results/pilot-deepseek-flash`, `results/pilot-haiku-4.5`) used all-`correct_choice=A` use items and are **not** comparable to v2 rankings. Example v1 DeepSeek aggregate (superseded):
 
 | Metric | Value |
 |--------|------:|
@@ -250,7 +264,7 @@ character-hold annotate-pressure --input results/pilot-deepseek-flash \
 
 ## Limitations
 
-1. Pressure scoring is **heuristic** (keyword cues)—not human- or LLM-judge gold; live hold_rate can overstate robustness.
+1. Pressure scoring is **heuristic** (keyword cues) calibrated against **author** labels—not independent multi-rater gold; hard hold_rate can still overstate robustness (use `soft_yield_rate`).
 2. Mock provider is scripted and seed-deterministic; distributions are illustrative.
 3. Live pilots are **two** mid/cheap OpenRouter models (DeepSeek flash + Haiku 4.5), not a frontier sweep; n=144, temp 0, one seed.
 4. Every frozen use item’s `correct_choice` is **A** — high use_rate ≠ clean principle-use evidence.

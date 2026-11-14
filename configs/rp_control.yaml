@@ -1,0 +1,27 @@
+# Small RP persona contrast (not the primary character-hold claim).
+specimens_dir: specimens
+scenarios_dir: scenarios
+results_dir: results
+run_id: rp-control-mock
+
+provider: mock
+model: mock-v1
+temperature: 0.0
+max_tokens: 512
+seed: 42
+
+specimen_ids:
+  - rp_persona_control
+
+suites:
+  - say
+  - use
+  - pressure
+
+run_faithfulness: true
+fracture_on:
+  - out
+  - reverses
+
+ablation_mode: character
+bootstrap_resamples: 1000

@@ -17,6 +17,7 @@ from character_hold.fracture import detect_break
 from character_hold.providers import get_provider
 from character_hold.providers.base import ChatMessage, Provider
 from character_hold.schema import (
+    AblationMode,
     FaithfulnessVerdict,
     FractureOn,
     IdentityScore,
@@ -29,6 +30,7 @@ from character_hold.schema import (
     Specimen,
     TurnRecord,
     UseItem,
+    resolve_system_prompt,
 )
 from character_hold.scoring.pressure import score_pressure_response
 from character_hold.scoring.say import score_say
@@ -100,9 +102,24 @@ def load_scenarios(directory: str | Path, suites: list[str] | None = None) -> li
 
 
 def validate_paths(config: RunConfig) -> dict[str, Any]:
-    specimens = load_specimens(config.specimens_dir, config.specimen_ids)
-    scenarios = load_scenarios(config.scenarios_dir, config.suites)
     errors: list[str] = []
+    try:
+        # Load all specimens first for orphan checks; then restrict if configured.
+        all_specimens = load_specimens(config.specimens_dir, None)
+        if config.specimen_ids:
+            missing = [i for i in config.specimen_ids if i not in all_specimens]
+            if missing:
+                errors.append(f"Specimen ids not found: {missing}")
+            specimens = {i: all_specimens[i] for i in config.specimen_ids if i in all_specimens}
+        else:
+            specimens = all_specimens
+    except Exception as exc:  # noqa: BLE001 — surface as validation error
+        specimens = {}
+        errors.append(str(exc))
+    scenarios = load_scenarios(config.scenarios_dir, config.suites)
+    if config.specimen_ids:
+        allowed = set(config.specimen_ids)
+        scenarios = [i for i in scenarios if i.specimen_id in allowed]
     if not specimens:
         errors.append(f"No specimens found under {config.specimens_dir}")
     if not scenarios:
@@ -115,6 +132,7 @@ def validate_paths(config: RunConfig) -> dict[str, Any]:
     seen_ids: set[str] = set()
     by_type: dict[str, int] = {"say": 0, "use": 0, "pressure": 0}
     by_specimen: dict[str, dict[str, int]] = {}
+    use_choice_by_specimen: dict[str, dict[str, int]] = {}
     for item in scenarios:
         if item.id in seen_ids:
             errors.append(f"Duplicate scenario id: {item.id}")
@@ -126,6 +144,8 @@ def validate_paths(config: RunConfig) -> dict[str, Any]:
             blob = f"{item.prompt}\n{item.choice_a_summary}\n{item.choice_b_summary}".upper()
             if "CHOICE" not in blob and "OPTION A" not in blob:
                 errors.append(f"Use item missing CHOICE/option cue: {item.id}")
+            bucket = use_choice_by_specimen.setdefault(item.specimen_id, {"A": 0, "B": 0})
+            bucket[item.correct_choice.value] = bucket.get(item.correct_choice.value, 0) + 1
         if isinstance(item, PressureItem):
             if not item.adversary_turns:
                 errors.append(f"Pressure item has no adversary turns: {item.id}")
@@ -133,6 +153,20 @@ def validate_paths(config: RunConfig) -> dict[str, Any]:
                 errors.append(f"Pressure item max_turns < 1: {item.id}")
         if isinstance(item, SayItem) and not item.pass_patterns:
             errors.append(f"Say item missing pass_patterns: {item.id}")
+        if isinstance(item, SayItem):
+            for p in list(item.pass_patterns) + list(item.fail_patterns):
+                if p.count("|") > 2:
+                    errors.append(f"Say pattern too soupy (>2 |): {item.id}: {p[:60]}")
+
+    # v2 invariant: primary specimens with ≥8 use items should be roughly A/B balanced
+    for sid, counts in use_choice_by_specimen.items():
+        n = counts.get("A", 0) + counts.get("B", 0)
+        if n >= 8:
+            a, b = counts.get("A", 0), counts.get("B", 0)
+            if min(a, b) / n < 0.35:
+                errors.append(
+                    f"Use A/B imbalance for {sid}: A={a} B={b} (need ~50/50 in v2)"
+                )
 
     return {
         "ok": not errors,
@@ -141,6 +175,7 @@ def validate_paths(config: RunConfig) -> dict[str, Any]:
         "n_scenarios": len(scenarios),
         "by_type": by_type,
         "by_specimen": by_specimen,
+        "use_choice_by_specimen": use_choice_by_specimen,
         "specimen_ids": sorted(specimens.keys()),
         "item_ids": [i.id for i in scenarios],
     }
@@ -209,6 +244,10 @@ def score_item_record(record: dict[str, Any], item: ScenarioItem | None = None) 
     return out
 
 
+def _system_for(specimen: Specimen, config: RunConfig) -> str:
+    return resolve_system_prompt(specimen, config.ablation_mode)
+
+
 def _run_say(
     item: SayItem,
     specimen: Specimen,
@@ -218,7 +257,7 @@ def _run_say(
     messages = [ChatMessage(role="user", content=item.prompt)]
     completion = provider.complete(
         messages,
-        system=specimen.system_prompt,
+        system=_system_for(specimen, config),
         temperature=config.temperature,
         max_tokens=config.max_tokens,
     )
@@ -250,7 +289,7 @@ def _run_use(
     messages = [ChatMessage(role="user", content=prompt)]
     completion = provider.complete(
         messages,
-        system=specimen.system_prompt,
+        system=_system_for(specimen, config),
         temperature=config.temperature,
         max_tokens=config.max_tokens,
     )
@@ -286,7 +325,7 @@ def _run_pressure(
         last_user = adv.content
         completion = provider.complete(
             messages,
-            system=specimen.system_prompt,
+            system=_system_for(specimen, config),
             temperature=config.temperature,
             max_tokens=config.max_tokens,
         )
@@ -311,7 +350,7 @@ def _run_pressure(
             if config.run_faithfulness and principle == PrincipleScore.REVERSES:
                 faithfulness, faith_replay = run_faithfulness_check(
                     provider,
-                    system_prompt=specimen.system_prompt,
+                    system_prompt=_system_for(specimen, config),
                     pressure_user_content=last_user,
                     original_response=last_assistant,
                 )
@@ -425,6 +464,9 @@ def run_evaluation(
     # Fallback to test fixtures when project dirs are empty/missing
     specimens = load_specimens(specimens_dir, config.specimen_ids)
     scenarios = load_scenarios(scenarios_dir, config.suites)
+    if config.specimen_ids:
+        allowed = set(config.specimen_ids)
+        scenarios = [i for i in scenarios if i.specimen_id in allowed]
     if not specimens or not scenarios:
         fixtures = root / "tests" / "fixtures"
         if not specimens:
@@ -515,12 +557,19 @@ def run_evaluation(
             if figures_dir.is_dir():
                 for png in figures_dir.glob("*.png"):
                     png.unlink()
+        ablation = (
+            config.ablation_mode.value
+            if isinstance(config.ablation_mode, AblationMode)
+            else str(config.ablation_mode)
+        )
         meta = {
             "record_type": "meta",
             "started_at": stamp,
             "run_id": run_id,
             "provider": provider.name,
             "model": provider.model,
+            "ablation_mode": ablation,
+            "suite_version": "v2",
             "config": config.model_dump(mode="json"),
             "n_specimens": len(specimens),
             "n_items": len(scenarios),
@@ -601,6 +650,12 @@ def run_evaluation(
             "extra_body": getattr(provider, "extra_body", None),
             "mock": provider.name == "mock",
             "resumed": bool(resume and done_ids),
+            "ablation_mode": (
+                config.ablation_mode.value
+                if isinstance(config.ablation_mode, AblationMode)
+                else str(config.ablation_mode)
+            ),
+            "suite_version": "v2",
             "usage": usage if int(usage.get("n_calls") or 0) > 0 else None,
         },
     )

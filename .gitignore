@@ -38,6 +38,20 @@ results/**
 !results/pilot-deepseek-flash/**
 !results/pilot-haiku-4.5/
 !results/pilot-haiku-4.5/**
+# Suite v2 live arms
+!results/v2-deepseek-character/
+!results/v2-deepseek-character/**
+!results/v2-deepseek-no-character/
+!results/v2-deepseek-no-character/**
+!results/v2-deepseek-opposite/
+!results/v2-deepseek-opposite/**
+!results/v2-deepseek-rp-control/
+!results/v2-deepseek-rp-control/**
+!results/v2-deepseek-character/dual_annotation/
+!results/v2-deepseek-character/dual_annotation/**
+# Author annotations
+!annotations/
+!annotations/**
 # Keep live-run tee logs local-only
 results/**/*-run.log
 !results/pilot-deepseek-flash/dual_annotation/

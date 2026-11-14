@@ -1,0 +1,29 @@
+{
+  "raw": "/home/federico/development/remote-test-project/results/v2-deepseek-character/raw.jsonl",
+  "scored": "/home/federico/development/remote-test-project/results/v2-deepseek-character/scored.jsonl",
+  "provider": "openrouter",
+  "model": "deepseek/deepseek-v4.1-flash",
+  "upstream_model": "deepseek/deepseek-v4.1-flash",
+  "n_results": 144,
+  "seed": 42,
+  "temperature": 0.0,
+  "max_tokens": 512,
+  "extra_body": {
+    "reasoning": {
+      "effort": "none"
+    }
+  },
+  "mock": false,
+  "resumed": false,
+  "ablation_mode": "character",
+  "suite_version": "v2",
+  "usage": {
+    "prompt_tokens": 241061,
+    "completion_tokens": 75523,
+    "total_tokens": 316584,
+    "reasoning_tokens": 268,
+    "cost_usd": 0.061169783391999986,
+    "n_calls": 357,
+    "n_length_truncated": 1
+  }
+}

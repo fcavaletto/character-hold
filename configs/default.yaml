@@ -1,7 +1,7 @@
 specimens_dir: specimens
 scenarios_dir: scenarios
 results_dir: results
-# Stable pilot artifact directory: results/pilot/
+# Stable mock artifact directory: results/pilot/
 run_id: pilot
 
 provider: mock
@@ -10,10 +10,12 @@ temperature: 0.0
 max_tokens: 512
 seed: 42
 
-# If empty/null, load all specimens found under specimens_dir
-specimen_ids: null
+# Primary v2 specimens (RP control is opt-in via configs/rp_control.yaml)
+specimen_ids:
+  - truth_over_agreement
+  - calibrated_uncertainty
+  - principle_under_authority
 
-# Suite filters: null/empty = all item types present in scenarios
 suites:
   - say
   - use
@@ -24,5 +26,8 @@ fracture_on:
   - out
   - reverses
 
-# Optional secondary LLM judge for pressure (deterministic scoring remains primary)
 use_llm_judge: false
+
+# Ablation arm: character | no_character | opposite_character
+ablation_mode: character
+bootstrap_resamples: 1000

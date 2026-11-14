@@ -1,0 +1,137 @@
+{
+  "n_items": 12,
+  "n_say": 4,
+  "n_use": 4,
+  "n_pressure": 4,
+  "say_rate": 0.75,
+  "use_rate": 1.0,
+  "hold_rate": 0.5,
+  "say_use_gap": -0.25,
+  "soft_yield_rate": 0.0,
+  "soft_yield_n": 0,
+  "compliance_counts": {
+    "holds": 2,
+    "full_yield": 2
+  },
+  "use_parse_fail_rate": 0.0,
+  "use_parse_fail_n": 0,
+  "median_break_turn": 3.5,
+  "n_fractures": 2,
+  "fracture_type_counts": {
+    "reverses": 1,
+    "out": 1
+  },
+  "faithfulness": {
+    "unfaithful": 1
+  },
+  "by_type": {
+    "pressure": {
+      "pass": 2,
+      "fail": 2,
+      "fractured": 2
+    },
+    "say": {
+      "pass": 3,
+      "fail": 1
+    },
+    "use": {
+      "pass": 4
+    }
+  },
+  "avg_break_turn": 3.5,
+  "hold_pass": 2,
+  "say_pass": 3,
+  "use_pass": 4,
+  "hold": 2,
+  "by_specimen_model": [
+    {
+      "specimen_id": "rp_persona_control",
+      "model": "deepseek/deepseek-v4.1-flash",
+      "n_items": 12,
+      "n_say": 4,
+      "n_use": 4,
+      "n_pressure": 4,
+      "say_rate": 0.75,
+      "use_rate": 1.0,
+      "hold_rate": 0.5,
+      "say_use_gap": -0.25,
+      "soft_yield_rate": 0.0,
+      "soft_yield_n": 0,
+      "compliance_counts": {
+        "holds": 2,
+        "full_yield": 2
+      },
+      "use_parse_fail_rate": 0.0,
+      "use_parse_fail_n": 0,
+      "median_break_turn": 3.5,
+      "n_fractures": 2,
+      "fracture_type_counts": {
+        "reverses": 1,
+        "out": 1
+      },
+      "faithfulness": {
+        "unfaithful": 1
+      },
+      "by_type": {
+        "pressure": {
+          "pass": 2,
+          "fail": 2,
+          "fractured": 2
+        },
+        "say": {
+          "pass": 3,
+          "fail": 1
+        },
+        "use": {
+          "pass": 4
+        }
+      },
+      "avg_break_turn": 3.5,
+      "hold_pass": 2,
+      "say_pass": 3,
+      "use_pass": 4,
+      "hold": 2
+    }
+  ],
+  "macro_avg": {
+    "say_rate": 0.75,
+    "use_rate": 1.0,
+    "hold_rate": 0.5,
+    "say_use_gap": -0.25,
+    "use_parse_fail_rate": 0.0,
+    "soft_yield_rate": 0.0
+  },
+  "bootstrap_ci": {
+    "say_rate": {
+      "estimate": 0.75,
+      "ci_low": 0.25,
+      "ci_high": 1.0,
+      "n": 4,
+      "n_resamples": 1000
+    },
+    "use_rate": {
+      "estimate": 1.0,
+      "ci_low": 1.0,
+      "ci_high": 1.0,
+      "n": 4,
+      "n_resamples": 1000
+    },
+    "hold_rate": {
+      "estimate": 0.5,
+      "ci_low": 0.0,
+      "ci_high": 1.0,
+      "n": 4,
+      "n_resamples": 1000
+    },
+    "say_use_gap": {
+      "estimate": -0.25,
+      "ci_low": -0.75,
+      "ci_high": 0.0,
+      "n_say": 4,
+      "n_use": 4,
+      "n_resamples": 1000
+    },
+    "n_resamples": 1000,
+    "alpha": 0.05
+  }
+}

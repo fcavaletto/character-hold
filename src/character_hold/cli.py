@@ -11,7 +11,9 @@ from rich.console import Console
 
 from character_hold.analyze import write_report
 from character_hold.annotate import run_dual_annotation
+from character_hold.agreement import compare_author_labels
 from character_hold.runner import load_config, rescore_run, run_evaluation, validate_paths
+from character_hold.schema import AblationMode
 
 app = typer.Typer(
     add_completion=False,
@@ -28,22 +30,42 @@ def _root() -> Path:
     return Path.cwd()
 
 
+def _resolve_cfg_paths(cfg, config_path: Path):
+    """Resolve specimen/scenario dirs relative to CWD, else config's project root."""
+    root = _root()
+    cfg_root = config_path.resolve().parent.parent if config_path else root
+    updates = {}
+    for key in ("specimens_dir", "scenarios_dir", "results_dir"):
+        raw = getattr(cfg, key)
+        p = Path(raw)
+        if p.is_absolute() and p.exists():
+            continue
+        if (root / raw).exists():
+            updates[key] = str((root / raw).resolve())
+        elif (cfg_root / raw).exists():
+            updates[key] = str((cfg_root / raw).resolve())
+    return cfg.model_copy(update=updates) if updates else cfg
+
+
 @app.command("validate")
 def validate(
     config: Path = typer.Option(Path("configs/default.yaml"), "--config", help="Config YAML"),
 ) -> None:
     """Validate specimens + scenarios against schema and cross-references."""
     load_dotenv()
-    cfg = load_config(config)
+    cfg = _resolve_cfg_paths(load_config(config), config)
     report = validate_paths(cfg)
     if not report["ok"]:
         fixtures = _root() / "tests" / "fixtures"
+        if not fixtures.exists():
+            fixtures = config.resolve().parent.parent / "tests" / "fixtures"
         from character_hold.schema import RunConfig
 
         alt = cfg.model_copy(
             update={
                 "specimens_dir": str(fixtures / "specimens"),
                 "scenarios_dir": str(fixtures / "scenarios"),
+                "specimen_ids": None,
             }
         )
         report = validate_paths(alt)
@@ -80,10 +102,17 @@ def run(
         "--resume",
         help="Keep an existing run-id JSONL and skip item ids already logged",
     ),
+    ablation: Optional[str] = typer.Option(
+        None,
+        "--ablation",
+        help="Ablation arm: character | no_character | opposite_character",
+    ),
 ) -> None:
     """Execute evaluation suites and write JSONL under results/."""
     load_dotenv()
-    cfg = load_config(config)
+    cfg = _resolve_cfg_paths(load_config(config), config)
+    if ablation:
+        cfg = cfg.model_copy(update={"ablation_mode": AblationMode(ablation)})
     run_dir = run_evaluation(
         cfg,
         provider_override=provider,
@@ -93,6 +122,7 @@ def run(
         resume=resume,
     )
     console.print(f"[green]Run complete[/green] → {run_dir}")
+    console.print(f"         ablation={cfg.ablation_mode.value}")
 
 
 @app.command("score")
@@ -185,6 +215,48 @@ def annotate_pressure(
     console.print(
         "[yellow]Note[/yellow] LLM judge is secondary only; primary hold/say/use unchanged."
     )
+
+
+@app.command("agree")
+def agree(
+    author: Path = typer.Option(
+        ...,
+        "--author",
+        help="Author annotation JSONL (annotations/pressure_v2_author/*.jsonl)",
+    ),
+    run: Optional[Path] = typer.Option(
+        None,
+        "--run",
+        help="Subject run dir for heuristic labels (default: infer from annotation meta)",
+    ),
+    judge: Optional[Path] = typer.Option(
+        None,
+        "--judge",
+        help="Optional dual_annotation dir with LLM-judge labels",
+    ),
+    output: Optional[Path] = typer.Option(
+        None,
+        "--output",
+        help="Output directory for agreement tables (default: alongside author file)",
+    ),
+) -> None:
+    """Compare heuristic (± LLM judge) labels against author codebook annotations."""
+    load_dotenv()
+    out = compare_author_labels(
+        author_path=author,
+        run_dir=run,
+        judge_dir=judge,
+        output_dir=output,
+    )
+    console.print(f"[green]Agreement[/green] → {out['output_dir']}")
+    for key, blob in (out.get("agreement") or {}).items():
+        if not isinstance(blob, dict):
+            continue
+        if "exact_match_rate" in blob:
+            console.print(
+                f"  {key}: match={blob['exact_match_rate']:.3f} "
+                f"κ={blob.get('cohens_kappa')} n={blob.get('n')}"
+            )
 
 
 if __name__ == "__main__":

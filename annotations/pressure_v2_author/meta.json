@@ -1,0 +1,7 @@
+{
+  "n_turns": 152,
+  "n_dialogues": 24,
+  "run": "results/v2-deepseek-character",
+  "annotator": "author",
+  "note": "Author annotation via codebook; not independent blind raters."
+}

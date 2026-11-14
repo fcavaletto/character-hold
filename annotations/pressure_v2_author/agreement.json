@@ -1,0 +1,180 @@
+{
+  "annotator": "author",
+  "note": "Author annotation — not independent blind multi-rater psychometrics.",
+  "heuristic_vs_author": {
+    "identity": {
+      "n": 152,
+      "exact_match_rate": 0.9013157894736842,
+      "cohens_kappa": 0.08212560386473368,
+      "confusion": {
+        "labels": [
+          "in_character",
+          "partial",
+          "out"
+        ],
+        "matrix": {
+          "in_character": {
+            "in_character": 136,
+            "partial": 3,
+            "out": 0
+          },
+          "partial": {
+            "in_character": 11,
+            "partial": 1,
+            "out": 0
+          },
+          "out": {
+            "in_character": 1,
+            "partial": 0,
+            "out": 0
+          }
+        },
+        "rows": "primary",
+        "cols": "secondary"
+      }
+    },
+    "principle": {
+      "n": 152,
+      "exact_match_rate": 0.9144736842105263,
+      "cohens_kappa": 0.34199134199134257,
+      "confusion": {
+        "labels": [
+          "holds",
+          "hedges",
+          "reverses"
+        ],
+        "matrix": {
+          "holds": {
+            "holds": 135,
+            "hedges": 3,
+            "reverses": 1
+          },
+          "hedges": {
+            "holds": 8,
+            "hedges": 4,
+            "reverses": 0
+          },
+          "reverses": {
+            "holds": 1,
+            "hedges": 0,
+            "reverses": 0
+          }
+        },
+        "rows": "primary",
+        "cols": "secondary"
+      }
+    },
+    "compliance_level": {
+      "n": 152,
+      "exact_match_rate": 0.9144736842105263,
+      "cohens_kappa": 0.34199134199134257,
+      "confusion": {
+        "labels": [
+          "holds",
+          "partial_compliance",
+          "full_yield"
+        ],
+        "matrix": {
+          "holds": {
+            "holds": 135,
+            "partial_compliance": 3,
+            "full_yield": 1
+          },
+          "partial_compliance": {
+            "holds": 8,
+            "partial_compliance": 4,
+            "full_yield": 0
+          },
+          "full_yield": {
+            "holds": 1,
+            "partial_compliance": 0,
+            "full_yield": 0
+          }
+        },
+        "rows": "primary",
+        "cols": "secondary"
+      }
+    }
+  },
+  "label_counts_author": {
+    "identity": {
+      "in_character": 139,
+      "partial": 12,
+      "out": 1
+    },
+    "principle": {
+      "holds": 139,
+      "hedges": 12,
+      "reverses": 1
+    },
+    "compliance_level": {
+      "holds": 139,
+      "partial_compliance": 12,
+      "full_yield": 1
+    }
+  },
+  "judge_vs_author": {
+    "identity": {
+      "n": 74,
+      "exact_match_rate": 0.8918918918918919,
+      "cohens_kappa": 0.0,
+      "confusion": {
+        "labels": [
+          "in_character",
+          "partial",
+          "out"
+        ],
+        "matrix": {
+          "in_character": {
+            "in_character": 66,
+            "partial": 0,
+            "out": 0
+          },
+          "partial": {
+            "in_character": 7,
+            "partial": 0,
+            "out": 0
+          },
+          "out": {
+            "in_character": 1,
+            "partial": 0,
+            "out": 0
+          }
+        },
+        "rows": "primary",
+        "cols": "secondary"
+      }
+    },
+    "principle": {
+      "n": 74,
+      "exact_match_rate": 0.8918918918918919,
+      "cohens_kappa": 0.0,
+      "confusion": {
+        "labels": [
+          "holds",
+          "hedges",
+          "reverses"
+        ],
+        "matrix": {
+          "holds": {
+            "holds": 66,
+            "hedges": 0,
+            "reverses": 0
+          },
+          "hedges": {
+            "holds": 7,
+            "hedges": 0,
+            "reverses": 0
+          },
+          "reverses": {
+            "holds": 1,
+            "hedges": 0,
+            "reverses": 0
+          }
+        },
+        "rows": "primary",
+        "cols": "secondary"
+      }
+    }
+  }
+}
