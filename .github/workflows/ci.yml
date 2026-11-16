@@ -24,8 +24,19 @@ jobs:
       - name: Lint-light
         run: |
           python -m compileall -q src
-          python -c "import yaml, pathlib; paths=list(pathlib.Path('specimens').glob('*.yaml'))+list(pathlib.Path('scenarios').rglob('*.yaml'))+list(pathlib.Path('configs').glob('*.yaml'));
-[yaml.safe_load(p.read_text()) for p in paths]; print(f'yaml_ok n={len(paths)}')"
+          python - <<'PY'
+          import pathlib
+          import yaml
+
+          paths = (
+              list(pathlib.Path("specimens").glob("*.yaml"))
+              + list(pathlib.Path("scenarios").rglob("*.yaml"))
+              + list(pathlib.Path("configs").glob("*.yaml"))
+          )
+          for path in paths:
+              yaml.safe_load(path.read_text())
+          print(f"yaml_ok n={len(paths)}")
+          PY
       - name: Pytest
         run: pytest -q
       - name: CLI smoke (validate + report on fixtures path)
