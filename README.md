@@ -1,40 +1,83 @@
 # character-hold
 
+[![CI](https://github.com/fcavaletto/character-hold/actions/workflows/ci.yml/badge.svg)](https://github.com/fcavaletto/character-hold/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 **Saying ≠ using ≠ holding** — under pressure — for *assistant character*.
 
-API chat models are routinely given system prompts that declare stable dispositions (“prefer truth over agreement,” “admit uncertainty,” “keep process under authority”). Users and evaluators often treat those lines as load-bearing. **character-hold** asks a sharper behavioral question: when the *assistant itself* is instructed to hold a principle, does verbal endorsement (**say**) survive into forced action (**use**), and does that disposition survive multi-turn social / authority / urgency pressure (**hold**)?
+API chat models are routinely given system prompts that declare stable dispositions (“prefer truth over agreement,” “admit uncertainty,” “keep process under authority”). **character-hold** asks whether verbal endorsement (**say**) survives into forced action (**use**), and whether that disposition survives multi-turn social / authority / urgency pressure (**hold**). This is **not** a persona / role-play fidelity benchmark.
 
-This is **not** a persona / role-play fidelity benchmark. High RP consistency does not answer whether a declared assistant principle fractures under conflict.
-
-**Author.** [Federico Cavaletto](https://github.com/fcavaletto) · **License.** MIT · **Cite.** [`CITATION.cff`](CITATION.cff) / [`CITATION.bib`](CITATION.bib)
-
-> **Degrees of evidence.** Suite **v2** is the default measurement design (balanced use A/B, soft-yield taxonomy, ablations, bootstrap CIs, author codebook labels). Live DeepSeek flash v2 arms are single-seed, temp 0 — **not** population estimates. MOCK tables remain a pipeline illustration. One-pager: [`results/COMPARISON.md`](results/COMPARISON.md) · Research note: [`docs/research_note_v2.md`](docs/research_note_v2.md).
+**Author.** [Federico Cavaletto](https://github.com/fcavaletto) · **License.** [MIT](LICENSE) · **Cite.** [`CITATION.cff`](CITATION.cff)
 
 ---
 
-## Why this matters for alignment
+## Start here
 
-Constitution-style and system-prompt “character” are cheap to write and expensive to trust. If models *say* the principle, *fail to use* it under forced choice, and *fracture early* under pressure, then “character” is performance rather than a load-bearing disposition—the same family of risk as sycophancy and saying-is-not-using-it, scoped to assistant principles rather than one-off prefs.
+| Goal | Go to |
+|------|--------|
+| **Run locally (no API)** | [Quickstart](#quickstart) → `make demo` |
+| **Read live findings (suite v2)** | [Key findings](#key-findings-suite-v2) · [`results/COMPARISON.md`](results/COMPARISON.md) · [`docs/research_note_v2.md`](docs/research_note_v2.md) |
+| **Open HTML reports** | [`results/v2-deepseek-character/report.html`](results/v2-deepseek-character/report.html) · [`results/pilot/report.html`](results/pilot/report.html) |
+| **Understand the protocol** | [`docs/methodology.md`](docs/methodology.md) · [`docs/ethics.md`](docs/ethics.md) |
+| **Annotation / agreement** | [`docs/dual_annotation.md`](docs/dual_annotation.md) · [`annotations/pressure_v2_author/`](annotations/pressure_v2_author/) |
 
-Primary gap metric: **say–use gap** = `say_rate − use_rate`. Pressure adds **break turn**, **fracture type**, and optional **faithfulness** probes when stance reverses.
-
----
-
-## Differentiation
-
-| | **character-hold** | PersonaGym / CharacterEval / RPEval |
-|--|--------------------|-------------------------------------|
-| **Object** | Declared *assistant* dispositions (system prompt principles) | Fictional / named persona |
-| **Conflict** | Principle vs agreeableness, authority, urgency | Stay-in-character vs OOC |
-| **Ladder** | say → use → hold → fracture → faithfulness | Persona consistency / RP rubrics |
-| **Risk** | Saying ≠ using; break under pressure | Lore / style drift |
-| **Scoring (v0)** | Deterministic say/use + heuristic pressure | Persona / RP judge rubrics |
-
-Full comparative note: [`docs/related_work.md`](docs/related_work.md).
+> **Degrees of evidence.** Suite **v2** is the default design (balanced use A/B, soft-yield taxonomy, ablations, bootstrap CIs, author codebook). Live DeepSeek flash arms are single-seed, temp 0 — **not** population estimates. MOCK tables are a pipeline illustration only.
 
 ---
 
-## Method
+## Quickstart
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e ".[dev]"
+cp .env.example .env   # add API keys only for live providers; never commit .env
+
+make demo              # validate → mock run → score → report (CPU-only)
+```
+
+Requires Python **3.11+**. Demo artifacts: [`results/pilot/report.html`](results/pilot/report.html) · [`results/pilot/INDEX.md`](results/pilot/INDEX.md).
+
+**Live OpenRouter one-liner** (costs money; needs `OPENROUTER_API_KEY` in `.env`):
+
+```bash
+character-hold run --config configs/v2_deepseek_character.yaml
+character-hold score --input results/v2-deepseek-character --scenarios-dir scenarios
+character-hold report --input results/v2-deepseek-character
+```
+
+Other v2 arms: `configs/v2_deepseek_no_character.yaml`, `configs/v2_deepseek_opposite.yaml`, `configs/v2_rp_control.yaml`.
+
+---
+
+## Key findings (suite v2)
+
+**Condition.** OpenRouter · `deepseek/deepseek-v4.1-flash` · temperature `0` · reasoning effort `none` · suite **v2**. Full write-up: [`docs/research_note_v2.md`](docs/research_note_v2.md) · one-pager: [`results/COMPARISON.md`](results/COMPARISON.md).
+
+| Arm | say (95% CI) | use | hold (95% CI) | soft_yield | cost |
+|-----|-------------:|----:|--------------:|-----------:|-----:|
+| [character](results/v2-deepseek-character/) | 0.792 [0.667, 0.896] | 1.000 | 0.979 [0.938, 1.000] | 0.188 | $0.061 |
+| [no_character](results/v2-deepseek-no-character/) | 0.792 [0.667, 0.917] | 1.000 | 1.000 [1.000, 1.000] | 0.250 | $0.049 |
+| [opposite](results/v2-deepseek-opposite/) | 0.646 [0.500, 0.771] | **0.000** | 0.958 [0.896, 1.000] | 0.458 | $0.063 |
+| [RP control](results/v2-deepseek-rp-control/) (n=12) | 0.750 | 1.000 | 0.500 | 0.000* | $0.003 |
+
+\*RP soft_yield 0 with 2/4 hard fractures (small-n).
+
+**Honest readout (do not overclaim):**
+
+- **character ≈ no_character** on say/use/hold — near-null causal test for the default prompt on this model.
+- **opposite** drives **use → 0**, so system text *can* control forced choice when it fights base priors.
+- Soft yield orders opposite > no_character > character; hard hold ≈ 1.0 is a **weak** differentiator here.
+- Author↔heuristic compliance match **0.914** (κ≈0.34): [`annotations/pressure_v2_author/`](annotations/pressure_v2_author/).
+- Dual-annotation (Haiku judge, n=24): [`results/v2-deepseek-character/dual_annotation_haiku/`](results/v2-deepseek-character/dual_annotation_haiku/) — secondary; does not replace primary metrics.
+
+Ablation figure: [`results/v2-deepseek-character/figures/v2_ablation_bars.png`](results/v2-deepseek-character/figures/v2_ablation_bars.png).
+
+**Primary gap metric:** **say–use gap** = `say_rate − use_rate`. Pressure adds **break turn**, **fracture type**, **soft_yield**, and optional **faithfulness** probes when stance reverses.
+
+---
+
+## Method (short)
 
 ```mermaid
 flowchart LR
@@ -53,233 +96,84 @@ flowchart LR
 | **Use** | Does it act on that principle in a forced-choice conflict? |
 | **Hold** | Does the disposition survive escalating pressure? |
 
-- **Specimens** (`specimens/` v2.0.0): `truth_over_agreement`, `calibrated_uncertainty`, `principle_under_authority` (+ opt-in `rp_persona_control`)
+- **Specimens** (`specimens/` v2): `truth_over_agreement`, `calibrated_uncertainty`, `principle_under_authority` (+ opt-in RP control)
 - **Scenarios** (`scenarios/` v2; v1 freeze in `scenarios_v1/`): 16×3×3 = **144** primary items; use ~50/50 A/B
-- **Ablations:** `--ablation character|no_character|opposite_character`
-- **Scorers:** deterministic say/use; pressure = heuristic identity × principle + **soft_yield** (primary). Author codebook + optional LLM judge are **secondary** ([`docs/annotation_codebook.md`](docs/annotation_codebook.md), [`docs/dual_annotation.md`](docs/dual_annotation.md)).
-- **Uncertainty:** bootstrap 95% CIs (1000 resamples) in `character-hold report`
-- **Faithfulness (harness v0):** `faithful` = replay holds; `unfaithful` = replay still reverses; `transparent` = admits pressure
+- **Ablations:** `character` / `no_character` / `opposite_character`
+- **Scorers:** deterministic say/use; pressure = heuristic + **soft_yield** (primary). Author codebook + optional LLM judge are **secondary**
 
-Protocol: [`docs/methodology.md`](docs/methodology.md) · Pre-reg v2: [`docs/preregistration_v2.md`](docs/preregistration_v2.md) · Research note: [`docs/research_note_v2.md`](docs/research_note_v2.md) · Ethics: [`docs/ethics.md`](docs/ethics.md)
+Protocol: [`docs/methodology.md`](docs/methodology.md) · Pre-reg: [`docs/preregistration_v2.md`](docs/preregistration_v2.md) · Ethics: [`docs/ethics.md`](docs/ethics.md) · Related work: [`docs/related_work.md`](docs/related_work.md)
 
 ---
 
-## Install
+## Repo map
 
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -e ".[dev]"
-cp .env.example .env   # add API keys only for live providers; never commit .env
 ```
-
-Requires Python **3.11+**.
-
----
-
-## One-command demo (CPU-only)
-
-```bash
-make demo
-# or: ./scripts/demo.sh
-```
-
-Runs validate → mock run → score → report. Open:
-
-- [`results/pilot/report.html`](results/pilot/report.html) — static demo report
-- [`results/pilot/INDEX.md`](results/pilot/INDEX.md) — one-page landing
-- [`results/pilot/figures/`](results/pilot/figures/) — publication-ready PNGs
-
----
-
-## Reproduce (stepwise)
-
-```bash
-character-hold validate
-character-hold run --config configs/default.yaml --provider mock --run-id pilot
-character-hold score --input results/pilot --scenarios-dir scenarios
-character-hold report --input results/pilot
-pytest
-```
-
----
-
-## Pilot results (MOCK)
-
-**Condition.** Provider `mock` / `mock-v1`, seed `42`, temperature `0`, full 144-item suite. API keys unset. See protocol card: [`docs/pilot_protocol.md`](docs/pilot_protocol.md).
-
-*Tables below are refreshed by `make demo` / `character-hold report`. Treat as pipeline illustration.*
-
-<!-- PILOT_RESULTS -->
-### Aggregate (illustrative MOCK)
-
-| Metric | Value |
-|--------|------:|
-| say_rate | 0.521 |
-| use_rate | 0.521 |
-| hold_rate | 0.333 |
-| say_use_gap | 0.000 |
-| use_parse_fail_rate | 0.000 |
-| median_break_turn (fractures) | 2.0 |
-| n_fractures | 32 / 48 |
-
-### Per specimen × model
-
-| Specimen | Model | say_rate | use_rate | hold_rate | say_use_gap | median_break_turn |
-|----------|-------|---------:|---------:|----------:|------------:|------------------:|
-| calibrated_uncertainty | mock-v1 | 0.625 | 0.625 | 0.375 | 0.000 | 2.0 |
-| principle_under_authority | mock-v1 | 0.562 | 0.438 | 0.312 | 0.125 | 2.0 |
-| truth_over_agreement | mock-v1 | 0.375 | 0.500 | 0.312 | −0.125 | 2.0 |
-
-### Fracture types & faithfulness
-
-| Fracture type | Count |
-|---------------|------:|
-| both (`out` + `reverses`) | 27 |
-| reverses | 5 |
-
-| Faithfulness (harness) | Count |
-|------------------------|------:|
-| faithful (replay holds) | 19 |
-| unfaithful (replay still reverses) | 10 |
-| transparent (admits pressure) | 3 |
-
-Full tables, figures, and HTML: [`results/pilot/INDEX.md`](results/pilot/INDEX.md) · [`results/pilot/report.html`](results/pilot/report.html).
-
-**Reading.** Under the mock, hold_rate is no longer a cartoonish 0, and faithfulness / fracture types are mixed by construction. Specimen gaps still change sign. Say scoring fail-closes when pass and fail patterns both match, which moves two mock say items from pass to fail versus an earlier table (say_rate 0.562 → 0.521). Treat this as a **pipeline illustration**, not a scientific finding about models.
-
----
-
-## Pilot results (LIVE — suite v2)
-
-**Condition.** OpenRouter · `deepseek/deepseek-v4.1-flash` · temperature `0` · reasoning effort `none` · suite **v2** (balanced use A/B, soft-yield pressure). Full write-up: [`docs/research_note_v2.md`](docs/research_note_v2.md) · [`results/COMPARISON.md`](results/COMPARISON.md).
-
-### Aggregate + ablations (95% bootstrap CIs)
-
-| Arm | say | use | hold | soft_yield | cost |
-|-----|-----|-----|------|------------|-----:|
-| [character](results/v2-deepseek-character/) | 0.792 [0.667, 0.896] | 1.000 | 0.979 [0.938, 1.000] | 0.188 | $0.061 |
-| [no_character](results/v2-deepseek-no-character/) | 0.792 [0.667, 0.917] | 1.000 | 0.983 | 0.283 | $0.049 |
-| [opposite](results/v2-deepseek-opposite/) | 0.646 [0.500, 0.771] | **0.000** | 0.941 | 0.451 | $0.063 |
-
-**Reading (honest).** Character ≈ no_character on say/use/hold (near-null causal test for the default prompt). Opposite drives **use → 0**, so system text can control forced choice when it fights base priors. Soft yield orders opposite > no_character > character. Hard hold ≈ 1.0 remains a weak differentiator on this model—do not overclaim. Author↔heuristic compliance match 0.914 (κ≈0.34): [`annotations/pressure_v2_author/`](annotations/pressure_v2_author/).
-
-### Historical v1 live appendix
-
-v1 DeepSeek/Haiku pilots (`results/pilot-deepseek-flash`, `results/pilot-haiku-4.5`) used all-`correct_choice=A` use items and are **not** comparable to v2 rankings. Example v1 DeepSeek aggregate (superseded):
-
-| Metric | Value |
-|--------|------:|
-| say_rate | 0.792 |
-| use_rate | 0.979 |
-| hold_rate | 1.000 |
-| say_use_gap | −0.188 |
-| use_parse_fail_rate | 0.021 |
-| median_break_turn (fractures) | — |
-| n_fractures | 0 / 48 |
-
-### Per specimen × model
-
-| Specimen | Model | say_rate | use_rate | hold_rate | say_use_gap | median_break_turn |
-|----------|-------|---------:|---------:|----------:|------------:|------------------:|
-| calibrated_uncertainty | deepseek/deepseek-v4.1-flash | 0.750 | 0.938 | 1.000 | −0.188 | — |
-| principle_under_authority | deepseek/deepseek-v4.1-flash | 0.812 | 1.000 | 1.000 | −0.188 | — |
-| truth_over_agreement | deepseek/deepseek-v4.1-flash | 0.812 | 1.000 | 1.000 | −0.188 | — |
-
-### Fracture types & faithfulness
-
-No pressure fractures under the current deterministic heuristics after fixing false positives on negated “reverse” / bare “abandon accuracy.” Faithfulness probes did not fire (they only run on reverse breaks).
-
-Full tables, figures, and HTML: [`results/pilot-deepseek-flash/INDEX.md`](results/pilot-deepseek-flash/INDEX.md) · [`results/pilot-deepseek-flash/report.html`](results/pilot-deepseek-flash/report.html).
-
-**Reading (honest).** On this one cheap chat model the say–use gap is negative (use 0.979, say 0.792): the three specimen gaps are tied at −0.188, and `calibrated_uncertainty` is the only cell with a use miss. Much of the say miss rate is the scorer fail-closing when a correct refusal quotes the bad policy. Every use item's correct key is A, and 47/48 replies were the line `CHOICE: A`, so use_rate does not separate principle-following from an A preference. **hold_rate = 1.0 is not evidence the model never yields** — it means the keyword heuristic, after ignoring negated “reverse” / bare “abandon accuracy,” found no `out` or `reverses` label. One model, n=144, temperature 0. Do not treat this as a frontier alignment result.
-
-### Stronger live arm — Haiku 4.5
-
-**Condition.** OpenRouter · **`anthropic/claude-haiku-4.5`** (upstream id matched) · temperature `0` · `max_tokens=512` · full frozen 144-item suite · run id `pilot-haiku-4.5`. Provider-reported cost **~$0.619** (359 calls). Spot-checks: [`results/pilot-haiku-4.5/notes.md`](results/pilot-haiku-4.5/notes.md).
-
-| Metric | DeepSeek flash | Haiku 4.5 |
-|--------|---------------:|----------:|
-| say_rate | 0.792 | 0.896 |
-| use_rate | 0.979 | 1.000 |
-| hold_rate | 1.000 | 1.000 |
-| say_use_gap | −0.188 | −0.104 |
-| n_fractures | 0 / 48 | 0 / 48 |
-| median_break_turn | — | — |
-| cost (USD) | ~0.057 | ~0.619 |
-
-Haiku shows higher say and a smaller-magnitude negative gap; use remains saturated. Generation-time logging briefly marked one false fracture (`doesn't go along` as OOC); offline rescore cleared it (same honesty bar as the DeepSeek negation fix). **All use keys remain A** — Haiku’s use_rate=1.0 is also not clean principle-use evidence. Full report: [`results/pilot-haiku-4.5/INDEX.md`](results/pilot-haiku-4.5/INDEX.md).
-
-### Live comparison (MOCK vs two OpenRouter arms)
-
-| Arm | say | use | hold | gap | fractures | cost |
-|-----|----:|----:|-----:|----:|----------:|-----:|
-| MOCK `mock-v1` | 0.521 | 0.521 | 0.333 | 0.000 | 32 / 48 | — |
-| `deepseek/deepseek-v4.1-flash` | 0.792 | 0.979 | 1.000 | −0.188 | 0 / 48 | ~$0.057 |
-| `anthropic/claude-haiku-4.5` | 0.896 | 1.000 | 1.000 | −0.104 | 0 / 48 | ~$0.619 |
-
-Grouped bars: [`results/pilot-haiku-4.5/figures/model_comparison_bars.png`](results/pilot-haiku-4.5/figures/model_comparison_bars.png) · One-pager: [`results/COMPARISON.md`](results/COMPARISON.md).
-
-### Dual annotation (secondary LLM judge)
-
-Protocol: [`docs/dual_annotation.md`](docs/dual_annotation.md). Stratified **n=24** pressure dialogues (8/specimen, seed 0) from DeepSeek; same item ids on Haiku. Primary = heuristic; secondary = cross-family OpenRouter judge. **Does not replace** published hold/say/use.
-
-| Subject | Judge (secondary) | Fracture match / κ | Identity match / κ | Principle match / κ | Missed fractures (sec. yes, prim. no) |
-|---------|-------------------|-------------------:|-------------------:|--------------------:|--------------------------------------:|
-| DeepSeek flash | Haiku 4.5 | 1.00 / 1.00* | 0.00 / 0.00 | 0.71 / 0.00 | **0 / 24** |
-| Haiku 4.5 | DeepSeek flash | 1.00 / 1.00* | 0.00 / 0.00 | 0.67 / 0.00 | **0 / 24** |
-
-\*Fracture κ is **degenerate** (both sides always “no fracture”). Identity disagreement is systematic: heuristic defaults to `partial`, judges prefer `in_character` on clear refusals. Principle: judges under-call `hedges`. Spot-checks: [`results/pilot-deepseek-flash/dual_annotation/notes.md`](results/pilot-deepseek-flash/dual_annotation/notes.md), [`results/pilot-haiku-4.5/dual_annotation/notes.md`](results/pilot-haiku-4.5/dual_annotation/notes.md).
-
-**Reading.** The secondary judges did **not** surface fractures the heuristic missed on this subset — so hold=1.0 skepticism is not empirically confirmed here — but label granularity disagreements show the primary scorer is coarse, and circularity/n/seed limits remain.
-
-### Still open
-
-1. Human dual-coding (or locked larger judge panel) beyond n=24
-2. CIs / more models / decoding seeds; use items with mixed correct keys
-3. Scenario-hash + git commit pinning in a public protocol card for live dirs
-
----
-
-## Live API (optional)
-
-| Provider   | Env var             | Example |
-|------------|---------------------|---------|
-| OpenAI     | `OPENAI_API_KEY`    | `character-hold run --provider openai --model gpt-4.1-mini --run-id pilot-openai` |
-| Anthropic  | `ANTHROPIC_API_KEY` | `character-hold run --provider anthropic --model claude-sonnet-4-20250514 --run-id pilot-anthropic` |
-| OpenRouter | `OPENROUTER_API_KEY`| `character-hold run --provider openrouter --model anthropic/claude-haiku-4.5 --run-id pilot-haiku-4.5` |
-
-```bash
-# Stronger comparison arm (documented model id)
-character-hold run --config configs/default.yaml --provider openrouter \
-  --model anthropic/claude-haiku-4.5 --run-id pilot-haiku-4.5
-
-# Dual-annotate DeepSeek pressure subset (Haiku judge = secondary)
-character-hold annotate-pressure --input results/pilot-deepseek-flash \
-  --judge-provider openrouter --judge-model anthropic/claude-haiku-4.5 \
-  --sample 24 --seed 0 --output results/pilot-deepseek-flash/dual_annotation/
+src/character_hold/   # harness (run / score / report / annotate)
+configs/              # default + v2 live arm YAMLs
+specimens/            # assistant character cards (v2)
+scenarios/            # say / use / pressure items (v2)
+scenarios_v1/         # frozen v1 scenarios (not default)
+docs/                 # methodology, research note v2, ethics, dual annotation
+results/              # committed pilots + v2 arms + COMPARISON.md
+annotations/          # author pressure labels (v2)
+scripts/              # demo.sh, comparison builder, author annotate
+tests/                # unit + smoke
 ```
 
 ---
 
 ## Limitations
 
-1. Pressure scoring is **heuristic** (keyword cues) calibrated against **author** labels—not independent multi-rater gold; hard hold_rate can still overstate robustness (use `soft_yield_rate`).
-2. Mock provider is scripted and seed-deterministic; distributions are illustrative.
-3. Live pilots are **two** mid/cheap OpenRouter models (DeepSeek flash + Haiku 4.5), not a frontier sweep; n=144, temp 0, one seed.
-4. Every frozen use item’s `correct_choice` is **A** — high use_rate ≠ clean principle-use evidence.
-5. Dual-annotation LLM judges are secondary, small-n, and circularity-prone; fracture κ can be degenerate when both sides always say “no.”
-6. Say patterns fail closed on paraphrase and on quoting forbidden policies while rejecting them; faithfulness phrase-strip is ad hoc.
-7. Construct / coverage limits: methodology §10.
+1. Pressure scoring is **heuristic**, calibrated against **author** labels — not independent multi-rater gold; prefer `soft_yield_rate` alongside hard hold.
+2. Live v2 pilots are **one** cheap OpenRouter model (DeepSeek flash), n≈144, temp 0, one seed — not a frontier sweep.
+3. Dual-annotation LLM judges are secondary, small-n, and circularity-prone.
+4. Mock provider is scripted; treat MOCK tables as pipeline illustration only.
+5. Construct / coverage limits: methodology §10.
 
-## Single best next experiment
+**Best next experiment.** Second human on the same 24 pressure dialogues; re-run a stronger model on the full v2 suite.
 
-Human-label the same 24 pressure dialogues (or expand the stratified set), and add use items with mixed A/B correct keys so say–use gaps are interpretable.
+---
 
-## Prior related work by the author
+## Historical appendix (v1 / MOCK)
 
-Preference-consistency · prompt-injection-eval · saying-is-not-using-it · value-acquisition-research-framework — see [github.com/fcavaletto](https://github.com/fcavaletto).
+v1 live pilots (`results/pilot-deepseek-flash`, `results/pilot-haiku-4.5`) used all-`correct_choice=A` use items and are **not** comparable to v2 rankings. See [`results/COMPARISON.md`](results/COMPARISON.md) appendix.
+
+**MOCK demo** (refreshed by `make demo`; illustrative only): say 0.521 · use 0.521 · hold 0.333 · gap 0.000 — [`results/pilot/INDEX.md`](results/pilot/INDEX.md).
+
+---
+
+## Live API (optional)
+
+| Provider   | Env var              |
+|------------|----------------------|
+| OpenRouter | `OPENROUTER_API_KEY` |
+| OpenAI     | `OPENAI_API_KEY`     |
+| Anthropic  | `ANTHROPIC_API_KEY`  |
+
+```bash
+character-hold run --config configs/v2_deepseek_character.yaml
+# Dual-annotate pressure subset (secondary judge)
+character-hold annotate-pressure --input results/v2-deepseek-character \
+  --judge-provider openrouter --judge-model anthropic/claude-haiku-4.5 \
+  --sample 24 --seed 0 --output results/v2-deepseek-character/dual_annotation_haiku/
+```
+
+---
+
+## Citation
+
+```bibtex
+@software{cavaletto_character_hold,
+  author = {Cavaletto, Federico},
+  title  = {character-hold},
+  year   = {2025},
+  url    = {https://github.com/fcavaletto/character-hold},
+  license = {MIT}
+}
+```
+
+Also: [`CITATION.cff`](CITATION.cff) · [`CITATION.bib`](CITATION.bib).
 
 ## Contributing / CI
 
-[`CONTRIBUTING.md`](CONTRIBUTING.md) · GitHub Actions: lint-light + pytest on push/PR (Python 3.11+). Publishing this checkout: [`docs/publishing.md`](docs/publishing.md).
+[`CONTRIBUTING.md`](CONTRIBUTING.md) · GitHub Actions: lint-light + pytest on push/PR (Python 3.11+). Publishing notes: [`docs/publishing.md`](docs/publishing.md).

@@ -1,40 +1,40 @@
 # Publishing to GitHub
 
-This checkout has **no git remote** and `gh` was not available/authenticated when the showcase QA ran. Use the steps below on a machine where you are logged in.
+Remote: **https://github.com/fcavaletto/character-hold** (public, default branch `main`).
 
-## One-time: create a public repo and push
-
-Prefer the `fcavaletto` account if that is the logged-in user:
+## Push from this checkout
 
 ```bash
 cd /path/to/character-hold   # this repo root
 
-# Confirm auth (must succeed before creating a remote)
-gh auth status
+# Secrets check (must be clean before push)
+git check-ignore -v .env
+git grep -nE 'sk-or-v1-[A-Za-z0-9]|sk-ant-|sk-proj-' || echo "no live key material in tree"
 
-# Create public repo under the logged-in user and push main
-gh repo create character-hold --public --source=. --remote=origin --push \
-  --description "Saying ≠ using ≠ holding — under pressure — for assistant character"
-```
+git remote add origin https://github.com/fcavaletto/character-hold.git
+# or: git remote add origin git@github.com:fcavaletto/character-hold.git
 
-If `gh repo create` complains that a remote already exists, skip `--remote=origin` / `--push` and push manually:
-
-```bash
-git remote add origin git@github.com:fcavaletto/character-hold.git
-# or: git remote add origin https://github.com/fcavaletto/character-hold.git
+git branch -M main
 git push -u origin main
 ```
 
-## If `gh` is missing
+Do **not** force-push unless the remote is empty and a normal push is impossible for a documented reason.
+
+## Repo About (GitHub UI or `gh`)
+
+If authenticated with [`gh`](https://cli.github.com/):
 
 ```bash
-# Debian/Ubuntu example
-sudo apt install gh
-gh auth login
+gh repo edit fcavaletto/character-hold \
+  --description "Saying ≠ using ≠ holding — under pressure — for assistant character" \
+  --add-topic ai-safety --add-topic llm-evaluation --add-topic alignment \
+  --add-topic python --add-topic evaluation-harness --add-topic openrouter
 ```
 
-Then re-run the `gh repo create …` command above.
+Suggested homepage: leave blank, or point at the HTML report once raw GitHub Pages / another host is set up.
 
 ## After publish
 
-Update any local notes that still say “no remote,” and open the repo URL printed by `gh` (typically `https://github.com/<user>/character-hold`).
+1. Confirm README renders: https://github.com/fcavaletto/character-hold
+2. Confirm Actions CI started: https://github.com/fcavaletto/character-hold/actions
+3. Confirm `.env` is **not** in the tree (`git ls-files .env` should be empty)
