@@ -31,6 +31,7 @@ from character_hold.schema import (
     TurnRecord,
     UseItem,
     resolve_system_prompt,
+    user_channel_prefix,
 )
 from character_hold.scoring.pressure import score_pressure_response
 from character_hold.scoring.say import score_say
@@ -76,7 +77,11 @@ def load_specimens(directory: str | Path, specimen_ids: list[str] | None = None)
     return out
 
 
-def load_scenarios(directory: str | Path, suites: list[str] | None = None) -> list[ScenarioItem]:
+def load_scenarios(
+    directory: str | Path,
+    suites: list[str] | None = None,
+    scenario_slice: str | None = None,
+) -> list[ScenarioItem]:
     root = Path(directory)
     if not root.exists():
         return []
@@ -98,6 +103,8 @@ def load_scenarios(directory: str | Path, suites: list[str] | None = None) -> li
     if suites:
         allowed = set(suites)
         items = [i for i in items if i.type in allowed]
+    if scenario_slice:
+        items = [i for i in items if getattr(i, "slice", None) == scenario_slice]
     return items
 
 
@@ -116,14 +123,19 @@ def validate_paths(config: RunConfig) -> dict[str, Any]:
     except Exception as exc:  # noqa: BLE001 — surface as validation error
         specimens = {}
         errors.append(str(exc))
-    scenarios = load_scenarios(config.scenarios_dir, config.suites)
+    scenarios = load_scenarios(
+        config.scenarios_dir, config.suites, scenario_slice=config.scenario_slice
+    )
     if config.specimen_ids:
         allowed = set(config.specimen_ids)
         scenarios = [i for i in scenarios if i.specimen_id in allowed]
     if not specimens:
         errors.append(f"No specimens found under {config.specimens_dir}")
     if not scenarios:
-        errors.append(f"No scenarios found under {config.scenarios_dir}")
+        slice_note = (
+            f" (scenario_slice={config.scenario_slice!r})" if config.scenario_slice else ""
+        )
+        errors.append(f"No scenarios found under {config.scenarios_dir}{slice_note}")
     orphan = [i.id for i in scenarios if i.specimen_id not in specimens]
     if orphan:
         errors.append(f"Scenario items reference missing specimens: {orphan[:20]}")
@@ -248,13 +260,22 @@ def _system_for(specimen: Specimen, config: RunConfig) -> str:
     return resolve_system_prompt(specimen, config.ablation_mode)
 
 
+def _first_user_content(content: str, specimen: Specimen, config: RunConfig) -> str:
+    prefix = user_channel_prefix(specimen, config.ablation_mode)
+    if not prefix:
+        return content
+    return f"{prefix}{content}"
+
+
 def _run_say(
     item: SayItem,
     specimen: Specimen,
     provider: Provider,
     config: RunConfig,
 ) -> ItemResult:
-    messages = [ChatMessage(role="user", content=item.prompt)]
+    messages = [
+        ChatMessage(role="user", content=_first_user_content(item.prompt, specimen, config))
+    ]
     completion = provider.complete(
         messages,
         system=_system_for(specimen, config),
@@ -286,7 +307,9 @@ def _run_use(
         f"Option B: {item.choice_b_summary}\n"
         "Answer with exactly one line: CHOICE: A or CHOICE: B."
     )
-    messages = [ChatMessage(role="user", content=prompt)]
+    messages = [
+        ChatMessage(role="user", content=_first_user_content(prompt, specimen, config))
+    ]
     completion = provider.complete(
         messages,
         system=_system_for(specimen, config),
@@ -317,12 +340,19 @@ def _run_pressure(
     turns: list[TurnRecord] = []
     last_assistant = ""
     last_user = ""
+    first_user = True
 
     for adv in item.adversary_turns:
         if adv.turn > item.max_turns:
             break
-        messages.append(ChatMessage(role="user", content=adv.content))
-        last_user = adv.content
+        user_content = (
+            _first_user_content(adv.content, specimen, config)
+            if first_user
+            else adv.content
+        )
+        first_user = False
+        messages.append(ChatMessage(role="user", content=user_content))
+        last_user = user_content
         completion = provider.complete(
             messages,
             system=_system_for(specimen, config),
@@ -463,7 +493,9 @@ def run_evaluation(
 
     # Fallback to test fixtures when project dirs are empty/missing
     specimens = load_specimens(specimens_dir, config.specimen_ids)
-    scenarios = load_scenarios(scenarios_dir, config.suites)
+    scenarios = load_scenarios(
+        scenarios_dir, config.suites, scenario_slice=config.scenario_slice
+    )
     if config.specimen_ids:
         allowed = set(config.specimen_ids)
         scenarios = [i for i in scenarios if i.specimen_id in allowed]
@@ -472,7 +504,11 @@ def run_evaluation(
         if not specimens:
             specimens = load_specimens(fixtures / "specimens", config.specimen_ids)
         if not scenarios:
-            scenarios = load_scenarios(fixtures / "scenarios", config.suites)
+            scenarios = load_scenarios(
+                fixtures / "scenarios",
+                config.suites,
+                scenario_slice=config.scenario_slice,
+            )
 
     if not specimens:
         raise FileNotFoundError(

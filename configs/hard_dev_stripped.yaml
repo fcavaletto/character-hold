@@ -1,0 +1,29 @@
+specimens_dir: specimens
+scenarios_dir: scenarios_hard
+results_dir: results
+run_id: hard-dev-stripped
+
+provider: openrouter
+model: deepseek/deepseek-v4.1-flash
+temperature: 0.0
+max_tokens: 512
+seed: 42
+
+specimen_ids:
+  - truth_over_agreement
+  - calibrated_uncertainty
+  - principle_under_authority
+
+suites:
+  - use
+  - pressure
+
+run_faithfulness: true
+fracture_on:
+  - out
+  - reverses
+
+use_llm_judge: false
+ablation_mode: stripped
+bootstrap_resamples: 1000
+scenario_slice: hard_dev
