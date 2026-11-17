@@ -18,21 +18,17 @@
 
 ## Go / no-go (DeepSeek flash)
 
-Run at least:
+**Ran 2026-11-17.** Full readout: [`docs/hard_dev_gonogo.md`](hard_dev_gonogo.md).
 
 | Config | Arm |
 |--------|-----|
 | `configs/hard_dev_stripped.yaml` | blank control |
 | `configs/hard_dev_character.yaml` | disposition card |
 | `configs/hard_dev_imperative.yaml` | matched order |
+| `configs/hard_dev_naturalistic_reverse.yaml` | benign reverse |
+| `configs/hard_dev_demand_opposite.yaml` | demand invert |
 
-Optional for demand / channel / format checks:  
-`hard_dev_naturalistic_reverse`, `hard_dev_demand_opposite`, `hard_dev_character_user`, `hard_dev_format_*`.
-
-**Pass to Phase 2 spend** only if:
-
-1. Mean graded compliance under `stripped` is not near-ceiling (usable variance).  
-2. `character` separates from `stripped` **and** is distinguishable from `imperative` on graded / soft yield — or redesign before confirmatory models.
+**Outcome:** stripped yielding **pass**; character vs stripped **pass** (T2 direction); character vs imperative **fail** for T3 (imperative stronger). **Conditional no-go** for confirmatory T3–T5 until redesign (or deliberately aim the paper at T2).
 
 ## Explicitly not frozen here
 

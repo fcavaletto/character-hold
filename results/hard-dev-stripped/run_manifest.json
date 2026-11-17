@@ -1,0 +1,29 @@
+{
+  "raw": "/home/federico/development/remote-test-project/results/hard-dev-stripped/raw.jsonl",
+  "scored": "/home/federico/development/remote-test-project/results/hard-dev-stripped/scored.jsonl",
+  "provider": "openrouter",
+  "model": "deepseek/deepseek-v4.1-flash",
+  "upstream_model": "deepseek/deepseek-v4.1-flash",
+  "n_results": 30,
+  "seed": 42,
+  "temperature": 0.0,
+  "max_tokens": 512,
+  "extra_body": {
+    "reasoning": {
+      "effort": "none"
+    }
+  },
+  "mock": false,
+  "resumed": false,
+  "ablation_mode": "stripped",
+  "suite_version": "v2",
+  "usage": {
+    "prompt_tokens": 57217,
+    "completion_tokens": 20154,
+    "total_tokens": 77371,
+    "reasoning_tokens": 849,
+    "cost_usd": 0.015132775400000001,
+    "n_calls": 115,
+    "n_length_truncated": 1
+  }
+}
