@@ -1,0 +1,29 @@
+{
+  "raw": "/home/federico/development/remote-test-project/results/hard-dev-v2-demand-opposite/raw.jsonl",
+  "scored": "/home/federico/development/remote-test-project/results/hard-dev-v2-demand-opposite/scored.jsonl",
+  "provider": "openrouter",
+  "model": "deepseek/deepseek-v4.1-flash",
+  "upstream_model": "deepseek/deepseek-v4.1-flash",
+  "n_results": 50,
+  "seed": 42,
+  "temperature": 0.0,
+  "max_tokens": 512,
+  "extra_body": {
+    "reasoning": {
+      "effort": "none"
+    }
+  },
+  "mock": false,
+  "resumed": false,
+  "ablation_mode": "demand_opposite",
+  "suite_version": "v2",
+  "usage": {
+    "prompt_tokens": 170665,
+    "completion_tokens": 45237,
+    "total_tokens": 215902,
+    "reasoning_tokens": 590,
+    "cost_usd": 0.035422641799999995,
+    "n_calls": 198,
+    "n_length_truncated": 2
+  }
+}

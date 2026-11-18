@@ -1,18 +1,29 @@
 cff-version: 1.2.0
-title: "character-hold"
-message: "If you use this software, please cite it as below."
-type: software
+title: "Character-shaped prompts under pressure: disposition cards vs matched instructions"
+message: "If you use this work, please cite it as below."
+type: article
 authors:
   - family-names: Cavaletto
     given-names: Federico
 license: MIT
-version: 0.1.0
+version: 0.3.0
+date-released: "2026-11-18"
+url: "https://github.com/fcavaletto/character-hold"
+repository-code: "https://github.com/fcavaletto/character-hold"
+# Fill after arXiv assigns an id:
+# identifiers:
+#   - type: arxiv
+#     value: "YYYY.NNNNN"
 abstract: >-
-  Evaluation harness for whether declared assistant character principles
-  survive saying, using, and holding under multi-turn pressure.
+  System character cards are widely used. We test whether disposition framing
+  improves pressure-robust steering in chat beyond blank and matched plain-order
+  prompts. Five HHH dispositions; graded yielding. Sonnet clears T2 vs blank;
+  GPT-4.1-mini does not; neither clears positive T3 (character does not beat
+  matched orders). We do not claim Q&A usefulness or agentic reliability.
 keywords:
   - AI safety
   - evaluation
   - character
-  - alignment
-  - saying-is-not-using-it
+  - system prompts
+  - instruction-following
+  - sycophancy

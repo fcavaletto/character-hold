@@ -1,0 +1,9 @@
+{
+  "prompt_tokens": 170665,
+  "completion_tokens": 45237,
+  "total_tokens": 215902,
+  "reasoning_tokens": 590,
+  "cost_usd": 0.035422641799999995,
+  "n_calls": 198,
+  "n_length_truncated": 2
+}

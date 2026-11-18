@@ -105,7 +105,10 @@ def run(
     ablation: Optional[str] = typer.Option(
         None,
         "--ablation",
-        help="Ablation arm: character | no_character | opposite_character",
+        help=(
+            "Ablation arm: character | stripped | imperative | naturalistic_reverse | "
+            "character_user | format_rule | no_character | demand_opposite | opposite_character"
+        ),
     ),
 ) -> None:
     """Execute evaluation suites and write JSONL under results/."""

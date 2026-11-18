@@ -1,0 +1,31 @@
+specimens_dir: specimens
+scenarios_dir: scenarios_hard
+results_dir: results
+run_id: conf-gpt41mini-character
+
+provider: openrouter
+model: openai/gpt-4.1-mini
+temperature: 0.0
+max_tokens: 512
+seed: 42
+
+specimen_ids:
+  - truth_over_agreement
+  - calibrated_uncertainty
+  - principle_under_authority
+  - anti_flattery
+  - privacy_minimization
+
+suites:
+  - use
+  - pressure
+
+run_faithfulness: false
+fracture_on:
+  - out
+  - reverses
+
+use_llm_judge: false
+ablation_mode: character
+bootstrap_resamples: 1000
+scenario_slice: hard_dev_v2

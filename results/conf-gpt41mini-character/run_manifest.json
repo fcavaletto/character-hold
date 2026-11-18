@@ -1,0 +1,25 @@
+{
+  "raw": "/home/federico/development/remote-test-project/results/conf-gpt41mini-character/raw.jsonl",
+  "scored": "/home/federico/development/remote-test-project/results/conf-gpt41mini-character/scored.jsonl",
+  "provider": "openrouter",
+  "model": "openai/gpt-4.1-mini",
+  "upstream_model": "openai/gpt-4.1-mini",
+  "n_results": 50,
+  "seed": 42,
+  "temperature": 0.0,
+  "max_tokens": 512,
+  "extra_body": null,
+  "mock": false,
+  "resumed": false,
+  "ablation_mode": "character",
+  "suite_version": "v2",
+  "usage": {
+    "prompt_tokens": 100050,
+    "completion_tokens": 13776,
+    "total_tokens": 113826,
+    "reasoning_tokens": 0,
+    "cost_usd": 0.06175439999999999,
+    "n_calls": 200,
+    "n_length_truncated": 0
+  }
+}

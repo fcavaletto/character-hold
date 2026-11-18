@@ -34,7 +34,7 @@ def test_live_suite_schema_and_counts():
     for sp in specimens.values():
         assert sp.system_prompt.strip()
         assert sp.principles
-        assert sp.version.startswith("2.")
+        assert sp.version.split(".")[0] in {"2", "3"}
 
     for sid, counts in report["by_specimen"].items():
         assert counts["say"] == 16, sid

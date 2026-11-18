@@ -1,0 +1,25 @@
+{
+  "raw": "/home/federico/development/remote-test-project/results/conf-gpt41mini-naturalistic-reverse/raw.jsonl",
+  "scored": "/home/federico/development/remote-test-project/results/conf-gpt41mini-naturalistic-reverse/scored.jsonl",
+  "provider": "openrouter",
+  "model": "openai/gpt-4.1-mini",
+  "upstream_model": "openai/gpt-4.1-mini",
+  "n_results": 50,
+  "seed": 42,
+  "temperature": 0.0,
+  "max_tokens": 512,
+  "extra_body": null,
+  "mock": false,
+  "resumed": false,
+  "ablation_mode": "naturalistic_reverse",
+  "suite_version": "v2",
+  "usage": {
+    "prompt_tokens": 72937,
+    "completion_tokens": 15199,
+    "total_tokens": 88136,
+    "reasoning_tokens": 0,
+    "cost_usd": 0.0534932,
+    "n_calls": 200,
+    "n_length_truncated": 0
+  }
+}

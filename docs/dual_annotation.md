@@ -2,6 +2,8 @@
 
 **Status.** Secondary quality check on the **heuristic** pressure scorer. Dual annotation does **not** replace primary say / use / hold metrics.
 
+**Path D preprint.** No independent second human. Secondary reliability is **cross-family LLM-as-judge** on confirmatory + stripped runs — see [`docs/reliability_path_d.md`](reliability_path_d.md). Author files in `annotations/pressure_hard_dual/` are appendix only.
+
 **Scientific point.** Live pilots can report `hold_rate = 1.0` when the keyword heuristic finds no unnegated `out` / `reverses` cue. That is **not** gold evidence the model never yields. A secondary LLM judge is used to ask whether fractures were **missed** by the primary scorer (and to quantify agreement where both label).
 
 ---

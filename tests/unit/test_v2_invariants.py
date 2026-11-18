@@ -5,12 +5,15 @@ from __future__ import annotations
 from pathlib import Path
 
 from character_hold.bootstrap import bootstrap_ci, bootstrap_metrics
-from character_hold.runner import load_config, load_scenarios, validate_paths
+from character_hold.runner import load_config, load_scenarios, load_specimens, validate_paths
 from character_hold.schema import (
     AblationMode,
     GENERIC_SYSTEM_PROMPT,
+    STRIPPED_SYSTEM_PROMPT,
     Specimen,
+    SpecimenArmPrompts,
     resolve_system_prompt,
+    user_channel_prefix,
 )
 from character_hold.scoring.pressure import score_pressure_response
 
@@ -54,16 +57,106 @@ def test_ablation_system_prompt_wiring():
     sp = Specimen(
         id="t",
         name="T",
-        version="2.0.0",
+        version="2.1.0",
         system_prompt="CHARACTER_CARD_UNIQUE_XYZ",
         principles=["Prefer accuracy over agreement."],
         failure_modes=["Agree to be nice."],
+        arm_prompts=SpecimenArmPrompts(
+            imperative="IMPERATIVE_RULES_ONLY",
+            naturalistic_reverse="NATURALISTIC_REVERSE_CARD",
+        ),
     )
     assert resolve_system_prompt(sp, AblationMode.CHARACTER) == "CHARACTER_CARD_UNIQUE_XYZ"
     assert resolve_system_prompt(sp, AblationMode.NO_CHARACTER) == GENERIC_SYSTEM_PROMPT
+    assert resolve_system_prompt(sp, AblationMode.STRIPPED) == STRIPPED_SYSTEM_PROMPT
+    assert resolve_system_prompt(sp, AblationMode.IMPERATIVE) == "IMPERATIVE_RULES_ONLY"
+    assert (
+        resolve_system_prompt(sp, AblationMode.NATURALISTIC_REVERSE)
+        == "NATURALISTIC_REVERSE_CARD"
+    )
+    assert resolve_system_prompt(sp, AblationMode.CHARACTER_USER) == STRIPPED_SYSTEM_PROMPT
+    prefix = user_channel_prefix(sp, AblationMode.CHARACTER_USER)
+    assert prefix is not None and "CHARACTER_CARD_UNIQUE_XYZ" in prefix
+    assert user_channel_prefix(sp, AblationMode.CHARACTER) is None
     opp = resolve_system_prompt(sp, AblationMode.OPPOSITE_CHARACTER)
-    assert "OPPOSITE" in opp
+    demand = resolve_system_prompt(sp, AblationMode.DEMAND_OPPOSITE)
+    assert "OPPOSITE" in opp and opp == demand
     assert "Prefer accuracy" in opp or "Invert" in opp
+
+
+def test_hard_dev_slice_loads_and_tags():
+    cfg = load_config(ROOT / "configs/hard_dev_character.yaml")
+    cfg = cfg.model_copy(
+        update={
+            "specimens_dir": str(ROOT / "specimens"),
+            "scenarios_dir": str(ROOT / "scenarios_hard"),
+        }
+    )
+    report = validate_paths(cfg)
+    assert report["ok"], report["errors"]
+    items = load_scenarios(
+        ROOT / "scenarios_hard", suites=["use", "pressure"], scenario_slice="hard_dev"
+    )
+    assert items
+    assert all(getattr(i, "slice", None) == "hard_dev" for i in items)
+    tagged = [i for i in items if getattr(i, "disposition_tag", None)]
+    assert len(tagged) == len(items)
+    # Crossed specificity: TOA use file includes non-TOA tags
+    toa_use = [
+        i
+        for i in items
+        if i.type == "use" and i.specimen_id == "truth_over_agreement"
+    ]
+    tags = {i.disposition_tag for i in toa_use}
+    assert "truth_over_agreement" in tags
+    assert "calibrated_uncertainty" in tags or "principle_under_authority" in tags
+
+
+def test_primary_specimens_have_matched_arm_prompts():
+    specimens = load_specimens(ROOT / "specimens")
+    for sid in (
+        "truth_over_agreement",
+        "calibrated_uncertainty",
+        "principle_under_authority",
+        "anti_flattery",
+        "privacy_minimization",
+    ):
+        sp = specimens[sid]
+        assert sp.arm_prompts is not None
+        assert sp.arm_prompts.imperative
+        assert sp.arm_prompts.naturalistic_reverse
+        low = sp.arm_prompts.naturalistic_reverse.lower()
+        for banned in ("ablation", "invert", "opposite-character", "opposite character"):
+            assert banned not in low, (sid, banned)
+    assert "truth_over_agreement_weak" in specimens
+    for sid in (
+        "format_three_sentence",
+        "format_clarifying_question",
+        "format_metric_units",
+    ):
+        assert specimens[sid].trait_family == "format_rule"
+
+
+def test_hard_dev_v2_slice_counts():
+    items = load_scenarios(
+        ROOT / "scenarios_hard", suites=["use", "pressure"], scenario_slice="hard_dev_v2"
+    )
+    principle = {
+        "truth_over_agreement",
+        "calibrated_uncertainty",
+        "principle_under_authority",
+        "anti_flattery",
+        "privacy_minimization",
+    }
+    by = {}
+    for i in items:
+        if i.specimen_id in principle:
+            by.setdefault(i.specimen_id, {"pressure": 0, "use": 0})
+            by[i.specimen_id][i.type] += 1
+    assert set(by) == principle
+    for sid, c in by.items():
+        assert c["pressure"] >= 6, (sid, c)
+        assert c["use"] >= 4, (sid, c)
 
 
 def test_bootstrap_ci_helper():
