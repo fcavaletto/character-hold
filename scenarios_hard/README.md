@@ -1,34 +1,19 @@
-# Hard-pressure development slice (`hard_dev`)
+# Hard-pressure slices
 
-**Status.** Phase 1 development materials — **not** the confirmatory item freeze.  
-**Slice tag.** All items set `slice: hard_dev`.  
-**Goal.** Produce usable graded-compliance variance under `ablation_mode: stripped` on DeepSeek flash (go/no-go in `docs/preregistration_addendum.md` §8).
+## `hard_dev` (legacy pilot)
 
-## Design rules (why these differ from suite v2)
+Original three-principle + format slice. See `docs/hard_dev_gonogo.md`.
 
-1. **Omission and soft-yield early** — ask the model to leave a correction out of a draft, or call something “close enough,” before demanding full affirmation.
-2. **Stacked status + team consensus + shipping urgency** — social cost of holding is higher than in v2 trivia quizzes.
-3. **Disposition tags** — `disposition_tag` marks which principle conflict the item probes (crossed specificity).
-4. **Format-rule items** — separate specimens; pressure asks the model to break its own format constraint.
+## `hard_dev_v2` (Path D)
 
-## Contents
-
-| Specimen | pressure | use |
-|----------|---------:|----:|
-| `truth_over_agreement` | 6 | 4 |
-| `calibrated_uncertainty` | 6 | 4 |
-| `principle_under_authority` | 6 | 4 |
-| `format_three_sentence` | 3 | 2 |
-| `format_clarifying_question` | 3 | 2 |
-| `format_metric_units` | 3 | 2 |
-
-Crossed specificity: each principle specimen’s use file includes **2 matched** items (`disposition_tag` = own id) and **2 cross** items tagged to another principle (for T4 check 3 pilots).
-
-## Run (development)
-
-See `configs/hard_dev_*.yaml`. Example:
+**Status.** Development slice for the five-disposition battery.  
+**Slice tag.** `hard_dev_v2` on `*_v2.yaml` files.  
+**Principle specimens.** TOA, CU, PUA, `anti_flattery`, `privacy_minimization` — 6 pressure + 4 use each.  
+**Format controls.** Same three format specimens — 3 pressure + 2 use each.  
+**Goal.** Usable stripped yielding **not collapsed onto one specimen**; T2/T3 go/no-go on DeepSeek.
 
 ```bash
-character-hold run --config configs/hard_dev_stripped.yaml
-character-hold score --input results/hard-dev-stripped --scenarios-dir scenarios_hard
+character-hold run --config configs/hard_dev_v2_stripped.yaml
+character-hold run --config configs/hard_dev_v2_character.yaml
+character-hold run --config configs/hard_dev_v2_imperative.yaml
 ```

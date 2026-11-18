@@ -118,6 +118,8 @@ def test_primary_specimens_have_matched_arm_prompts():
         "truth_over_agreement",
         "calibrated_uncertainty",
         "principle_under_authority",
+        "anti_flattery",
+        "privacy_minimization",
     ):
         sp = specimens[sid]
         assert sp.arm_prompts is not None
@@ -126,12 +128,35 @@ def test_primary_specimens_have_matched_arm_prompts():
         low = sp.arm_prompts.naturalistic_reverse.lower()
         for banned in ("ablation", "invert", "opposite-character", "opposite character"):
             assert banned not in low, (sid, banned)
+    assert "truth_over_agreement_weak" in specimens
     for sid in (
         "format_three_sentence",
         "format_clarifying_question",
         "format_metric_units",
     ):
         assert specimens[sid].trait_family == "format_rule"
+
+
+def test_hard_dev_v2_slice_counts():
+    items = load_scenarios(
+        ROOT / "scenarios_hard", suites=["use", "pressure"], scenario_slice="hard_dev_v2"
+    )
+    principle = {
+        "truth_over_agreement",
+        "calibrated_uncertainty",
+        "principle_under_authority",
+        "anti_flattery",
+        "privacy_minimization",
+    }
+    by = {}
+    for i in items:
+        if i.specimen_id in principle:
+            by.setdefault(i.specimen_id, {"pressure": 0, "use": 0})
+            by[i.specimen_id][i.type] += 1
+    assert set(by) == principle
+    for sid, c in by.items():
+        assert c["pressure"] >= 6, (sid, c)
+        assert c["use"] >= 4, (sid, c)
 
 
 def test_bootstrap_ci_helper():

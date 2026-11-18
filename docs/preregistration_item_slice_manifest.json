@@ -1,0 +1,99 @@
+{
+  "slice": "hard_dev_v2",
+  "frozen_before_confirmatory": true,
+  "dev_model": "deepseek/deepseek-v4.1-flash",
+  "confirmatory_models": [
+    "anthropic/claude-sonnet-4.5",
+    "openai/gpt-4.1-mini"
+  ],
+  "seed": 42,
+  "temperature": 0.0,
+  "pressure_item_ids": [
+    "af_v2_pressure_001",
+    "af_v2_pressure_002",
+    "af_v2_pressure_003",
+    "af_v2_pressure_004",
+    "af_v2_pressure_005",
+    "af_v2_pressure_006",
+    "cu_v2_pressure_001",
+    "cu_v2_pressure_002",
+    "cu_v2_pressure_003",
+    "cu_v2_pressure_004",
+    "cu_v2_pressure_005",
+    "cu_v2_pressure_006",
+    "pm_v2_pressure_001",
+    "pm_v2_pressure_002",
+    "pm_v2_pressure_003",
+    "pm_v2_pressure_004",
+    "pm_v2_pressure_005",
+    "pm_v2_pressure_006",
+    "pua_v2_pressure_001",
+    "pua_v2_pressure_002",
+    "pua_v2_pressure_003",
+    "pua_v2_pressure_004",
+    "pua_v2_pressure_005",
+    "pua_v2_pressure_006",
+    "toa_v2_pressure_001",
+    "toa_v2_pressure_002",
+    "toa_v2_pressure_003",
+    "toa_v2_pressure_004",
+    "toa_v2_pressure_005",
+    "toa_v2_pressure_006"
+  ],
+  "use_item_ids": [
+    "af_v2_use_001",
+    "af_v2_use_002",
+    "af_v2_use_003",
+    "af_v2_use_004",
+    "cu_v2_use_001",
+    "cu_v2_use_002",
+    "cu_v2_use_003",
+    "cu_v2_use_004",
+    "pm_v2_use_001",
+    "pm_v2_use_002",
+    "pm_v2_use_003",
+    "pm_v2_use_004",
+    "pua_v2_use_001",
+    "pua_v2_use_002",
+    "pua_v2_use_003",
+    "pua_v2_use_004",
+    "toa_v2_use_001",
+    "toa_v2_use_002",
+    "toa_v2_use_003",
+    "toa_v2_use_004"
+  ],
+  "n_pressure": 30,
+  "n_use": 20,
+  "cards": {
+    "truth_over_agreement": {
+      "version": "3.0.0",
+      "system_prompt_sha256_16": "a9335689594e6d80",
+      "imperative_sha256_16": "0687e45bc304e263",
+      "naturalistic_reverse_sha256_16": "e22db308eeea1bda"
+    },
+    "calibrated_uncertainty": {
+      "version": "3.0.0",
+      "system_prompt_sha256_16": "a978af7b7273b168",
+      "imperative_sha256_16": "1d5a5327b46779c0",
+      "naturalistic_reverse_sha256_16": "2cee49807295954e"
+    },
+    "principle_under_authority": {
+      "version": "3.0.0",
+      "system_prompt_sha256_16": "3be187e937c801d1",
+      "imperative_sha256_16": "efe7f2e769baa37a",
+      "naturalistic_reverse_sha256_16": "18fffa620fb07f70"
+    },
+    "anti_flattery": {
+      "version": "1.0.0",
+      "system_prompt_sha256_16": "912295db8edcb14c",
+      "imperative_sha256_16": "e8879c191337e067",
+      "naturalistic_reverse_sha256_16": "7d5940524df84e1a"
+    },
+    "privacy_minimization": {
+      "version": "1.0.0",
+      "system_prompt_sha256_16": "dc775e9b31cd87f0",
+      "imperative_sha256_16": "c184e121f5f1410b",
+      "naturalistic_reverse_sha256_16": "b68150dbaf0baedb"
+    }
+  }
+}

@@ -1,0 +1,29 @@
+specimens_dir: specimens
+scenarios_dir: scenarios_hard
+results_dir: results
+run_id: hard-dev-v2-format-character
+
+provider: openrouter
+model: deepseek/deepseek-v4.1-flash
+temperature: 0.0
+max_tokens: 512
+seed: 42
+
+specimen_ids:
+  - format_three_sentence
+  - format_clarifying_question
+  - format_metric_units
+
+suites:
+  - use
+  - pressure
+
+run_faithfulness: false
+fracture_on:
+  - out
+  - reverses
+
+use_llm_judge: false
+ablation_mode: character
+bootstrap_resamples: 1000
+scenario_slice: hard_dev_v2

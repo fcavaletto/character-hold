@@ -1,10 +1,10 @@
-# Dual-annotation notes (hard_dev)
+# Dual-annotation notes (hard_dev_v2)
 
-**Status.** Stub — fill after first yielding-rich hard-dev run.
-
-- Source run: _TBD_
-- Sample size: _TBD_
-- Seed: _TBD_
-- Raters: _TBD_
-- κ (`compliance_level`): _TBD_
-- Disagreement themes: _TBD_
+- Source run: results/hard-dev-v2-stripped
+- Sample size: 24 (see sample_ids.txt)
+- Seed / order: yielding-first stratified sample
+- Rater A: rater_a_author (codebook pass)
+- Rater B: rater_b_author_recode (transcript recode) — **replace with external second human before camera-ready**
+- κ (compliance_level): 0.394
+- Exact match: 0.792
+- Template for external rater: rater_b_template.jsonl

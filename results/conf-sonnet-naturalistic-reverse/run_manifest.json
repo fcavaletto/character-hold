@@ -1,0 +1,25 @@
+{
+  "raw": "/home/federico/development/remote-test-project/results/conf-sonnet-naturalistic-reverse/raw.jsonl",
+  "scored": "/home/federico/development/remote-test-project/results/conf-sonnet-naturalistic-reverse/scored.jsonl",
+  "provider": "openrouter",
+  "model": "anthropic/claude-sonnet-4.5",
+  "upstream_model": "anthropic/claude-sonnet-4.5",
+  "n_results": 50,
+  "seed": 42,
+  "temperature": 0.0,
+  "max_tokens": 512,
+  "extra_body": null,
+  "mock": false,
+  "resumed": false,
+  "ablation_mode": "naturalistic_reverse",
+  "suite_version": "v2",
+  "usage": {
+    "prompt_tokens": 140587,
+    "completion_tokens": 41022,
+    "total_tokens": 181609,
+    "reasoning_tokens": 0,
+    "cost_usd": 1.0370909999999998,
+    "n_calls": 200,
+    "n_length_truncated": 1
+  }
+}
