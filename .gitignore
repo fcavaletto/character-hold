@@ -89,6 +89,12 @@ results/**
 !results/conf-sonnet-naturalistic-reverse/**
 !results/conf-sonnet-analysis/
 !results/conf-sonnet-analysis/**
+!results/conf-sonnet-character/dual_annotation_llm/
+!results/conf-sonnet-character/dual_annotation_llm/**
+!results/conf-gpt41mini-character/dual_annotation_llm/
+!results/conf-gpt41mini-character/dual_annotation_llm/**
+!results/hard-dev-v2-stripped/dual_annotation_llm/
+!results/hard-dev-v2-stripped/dual_annotation_llm/**
 !results/v2-deepseek-character/dual_annotation/
 !results/v2-deepseek-character/dual_annotation/**
 !results/v2-deepseek-character/dual_annotation_haiku/
